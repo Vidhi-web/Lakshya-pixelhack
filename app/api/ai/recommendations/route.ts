@@ -57,7 +57,7 @@ export async function GET() {
     const freeHours = Math.max(0, 8 - busyHours); // Assume 8-hour study day
 
     // Generate AI recommendations
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
 
     const prompt = `You are an AI study assistant for an Indian student.
 

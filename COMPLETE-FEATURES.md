@@ -250,7 +250,7 @@ After completing goal selection:
 - Profile creation error → Added INSERT policy
 - Icon imports → Fixed all Lucide icon names
 - Supabase imports → Using @supabase/ssr correctly
-- Model name → Changed to gemini-1.5-flash
+- Model name → Changed to gemini-3.5-flash-lite (gemini-1.5-flash deprecated)
 
 ### No Current Issues
 Build passes ✅  

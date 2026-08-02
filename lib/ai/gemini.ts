@@ -36,7 +36,7 @@ export async function generateRoadmap(
   userInput?: string
 ): Promise<Roadmap> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
 
     const prompt = `You are an expert career advisor and productivity coach specializing in helping Indian students achieve their academic and professional goals. 
 
@@ -398,7 +398,7 @@ export async function generateWeeklyRecommendations(
   }
 ): Promise<string[]> {
   try {
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
 
     const prompt = `You are a productivity coach for Indian students. Analyze the following progress data and provide 3-5 specific, actionable recommendations for the upcoming week.
 
