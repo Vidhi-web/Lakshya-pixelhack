@@ -69,6 +69,8 @@ export default async function AnalyticsPage() {
       }}
       recentActivity={analyticsEvents || []}
       tasks={tasks || []}
+      goalType={activeGoal?.type || ''}
+      goalTitle={activeGoal?.title || ''}
     />
   );
 }

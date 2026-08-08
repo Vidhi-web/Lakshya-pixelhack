@@ -27,6 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface Task {
   id: string;
@@ -183,6 +184,11 @@ export default function TasksPage() {
 
       if (response.ok) {
         setTasks(tasks.map(t => t.id === task.id ? data.task : t));
+        if (newStatus === 'completed') {
+          toast.success('🎉 Quest Completed! +25 XP ⭐', { id: `task-${task.id}` });
+        } else {
+          toast.success('Quest reopened', { id: `task-${task.id}` });
+        }
       }
     } catch (err) {
       console.error('Failed to toggle task status');
@@ -276,22 +282,23 @@ export default function TasksPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
         <div className="text-center">
-          <div className="w-16 h-16 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading tasks...</p>
+          <div className="w-16 h-16 border-4 border-amber-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Loading tasks...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+    <div className="min-h-screen transition-colors" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
+      <Toaster position="top-right" />
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>
               Tasks
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
@@ -322,7 +329,7 @@ export default function TasksPage() {
                   />
                 </div>
               </div>
-              <Select value={filterStatus} onValueChange={setFilterStatus}>
+              <Select value={filterStatus} onValueChange={(val) => setFilterStatus(val || 'all')}>
                 <SelectTrigger className="w-full md:w-48">
                   <Filter className="w-4 h-4 mr-2" />
                   <SelectValue placeholder="Filter by status" />

@@ -219,7 +219,7 @@ export default function NotesPage() {
 
   if (showEditor) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-yellow-50 to-orange-50 p-8">
+      <div className="min-h-screen p-4 md:p-8 transition-colors" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
         <Toaster position="top-right" />
         
         <div className="max-w-4xl mx-auto">
@@ -228,31 +228,33 @@ export default function NotesPage() {
               variant="ghost"
               onClick={() => setShowEditor(false)}
               className="mb-4"
+              style={{ color: 'var(--theme-text-primary)' }}
             >
               <ArrowLeft className="w-4 h-4 mr-2" />
               Back to Notes
             </Button>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent">
+            <h1 className="text-4xl font-bold" style={{ color: 'var(--theme-text-primary)' }}>
               {editingNote ? 'Edit Note' : 'Create Note'}
             </h1>
           </div>
 
-          <Card className="bg-white/80 backdrop-blur-xl shadow-2xl">
+          <Card className="shadow-2xl border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-6 space-y-4">
               {/* Title */}
               <div>
-                <label className="block text-sm font-medium mb-2">Title *</label>
+                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>Title *</label>
                 <Input
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
                   placeholder="Note title"
-                  className="text-lg font-semibold"
+                  className="text-lg font-semibold rounded-xl"
+                  style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                 />
               </div>
 
               {/* Rich Text Editor */}
               <div>
-                <label className="block text-sm font-medium mb-2">Content</label>
+                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>Content</label>
                 <RichTextEditor
                   content={content}
                   onChange={setContent}
@@ -262,24 +264,26 @@ export default function NotesPage() {
 
               {/* Tags */}
               <div>
-                <label className="block text-sm font-medium mb-2">Tags</label>
+                <label className="block text-sm font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>Tags</label>
                 <div className="flex gap-2 mb-2">
                   <Input
                     value={tagInput}
                     onChange={(e) => setTagInput(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && (e.preventDefault(), addTag())}
                     placeholder="Add a tag..."
+                    className="rounded-xl"
+                    style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                   />
-                  <Button type="button" onClick={addTag} variant="outline">
+                  <Button type="button" onClick={addTag} variant="outline" style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}>
                     <Plus className="w-4 h-4" />
                   </Button>
                 </div>
                 <div className="flex flex-wrap gap-2">
                   {tags.map(tag => (
-                    <span key={tag} className="px-3 py-1 rounded-full bg-yellow-100 text-yellow-700 text-sm flex items-center gap-2">
+                    <span key={tag} className="px-3 py-1 rounded-full text-sm flex items-center gap-2" style={{ background: 'var(--theme-accent)', color: '#fff' }}>
                       <Tag className="w-3 h-3" />
                       {tag}
-                      <button onClick={() => removeTag(tag)} className="hover:text-yellow-900">
+                      <button onClick={() => removeTag(tag)} className="hover:opacity-70">
                         <X className="w-3 h-3" />
                       </button>
                     </span>
@@ -296,7 +300,7 @@ export default function NotesPage() {
                   onChange={(e) => setIsFavorite(e.target.checked)}
                   className="w-4 h-4"
                 />
-                <label htmlFor="favorite" className="text-sm font-medium cursor-pointer">
+                <label htmlFor="favorite" className="text-sm font-medium cursor-pointer" style={{ color: 'var(--theme-text-primary)' }}>
                   Mark as favorite
                 </label>
               </div>
@@ -306,7 +310,8 @@ export default function NotesPage() {
                 <Button
                   onClick={handleSaveNote}
                   disabled={loading}
-                  className="flex-1 bg-gradient-to-r from-yellow-600 to-orange-600"
+                  className="flex-1 text-white font-bold rounded-xl"
+                  style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
                 >
                   {loading ? 'Saving...' : editingNote ? 'Update Note' : 'Create Note'}
                 </Button>
@@ -314,6 +319,8 @@ export default function NotesPage() {
                   variant="outline"
                   onClick={() => setShowEditor(false)}
                   disabled={loading}
+                  className="rounded-xl"
+                  style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}
                 >
                   Cancel
                 </Button>
@@ -326,20 +333,21 @@ export default function NotesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-yellow-50 to-orange-50 p-8">
+    <div className="min-h-screen p-4 md:p-8 transition-colors" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
       <Toaster position="top-right" />
       
       <div className="max-w-7xl mx-auto">
         <div className="mb-8 flex items-center justify-between">
           <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-yellow-600 to-orange-600 bg-clip-text text-transparent mb-2">
+            <h1 className="text-4xl font-bold mb-2" style={{ color: 'var(--theme-text-primary)' }}>
               Notes
             </h1>
-            <p className="text-gray-600">Capture your thoughts and ideas</p>
+            <p className="opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Capture your thoughts and ideas</p>
           </div>
           <Button
             onClick={handleCreateNote}
-            className="bg-gradient-to-r from-yellow-600 to-orange-600"
+            className="text-white font-bold rounded-xl"
+            style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
           >
             <Plus className="w-4 h-4 mr-2" />
             New Note
@@ -348,28 +356,30 @@ export default function NotesPage() {
 
         {/* Search and Filters */}
         <div className="grid md:grid-cols-3 gap-4 mb-6">
-          <Card className="md:col-span-2 bg-white/70 backdrop-blur-xl shadow-xl">
+          <Card className="md:col-span-2 shadow-lg border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-4">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 opacity-50" style={{ color: 'var(--theme-text-primary)' }} />
                 <Input
                   placeholder="Search notes by title or content..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10"
+                  className="pl-10 rounded-xl"
+                  style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                 />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="bg-white/70 backdrop-blur-xl shadow-xl">
+          <Card className="shadow-lg border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-4">
               <div className="flex items-center gap-2">
-                <Tag className="w-4 h-4 text-yellow-600" />
+                <Tag className="w-4 h-4" style={{ color: 'var(--theme-accent)' }} />
                 <select
                   value={selectedTag || ''}
                   onChange={(e) => setSelectedTag(e.target.value || null)}
-                  className="flex-1 px-3 py-2 border rounded-md bg-white"
+                  className="flex-1 px-3 py-2 border rounded-xl text-sm font-semibold"
+                  style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                 >
                   <option value="">All Tags</option>
                   {getAllTags().map(tag => (
@@ -383,38 +393,42 @@ export default function NotesPage() {
 
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-200">
+          <Card className="border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-yellow-600">{notes.length}</div>
-              <div className="text-sm text-gray-600">Total Notes</div>
+              <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>{notes.length}</div>
+              <div className="text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Total Notes</div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-200">
+          <Card className="border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-yellow-600">
+              <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>
                 {notes.filter(n => n.is_favorite).length}
               </div>
-              <div className="text-sm text-gray-600">Favorites</div>
+              <div className="text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Favorites</div>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border-yellow-200">
+          <Card className="border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-4 text-center">
-              <div className="text-3xl font-bold text-yellow-600">{getAllTags().length}</div>
-              <div className="text-sm text-gray-600">Tags</div>
+              <div className="text-3xl font-bold" style={{ color: 'var(--theme-accent)' }}>{getAllTags().length}</div>
+              <div className="text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Tags</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Notes Grid */}
         {filteredNotes.length === 0 ? (
-          <Card className="bg-white/70 backdrop-blur-xl shadow-xl">
+          <Card className="shadow-lg border rounded-2xl" style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-12 text-center">
-              <StickyNote className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-              <h3 className="text-xl font-semibold mb-2">No notes found</h3>
-              <p className="text-gray-600 mb-4">
+              <StickyNote className="w-16 h-16 mx-auto mb-4 opacity-40" style={{ color: 'var(--theme-text-primary)' }} />
+              <h3 className="text-xl font-semibold mb-2" style={{ color: 'var(--theme-text-primary)' }}>No notes found</h3>
+              <p className="opacity-60 mb-4" style={{ color: 'var(--theme-text-primary)' }}>
                 {searchQuery || selectedTag ? 'Try adjusting your filters' : 'Create your first note to get started'}
               </p>
-              <Button onClick={handleCreateNote} className="bg-gradient-to-r from-yellow-600 to-orange-600">
+              <Button 
+                onClick={handleCreateNote} 
+                className="text-white font-bold rounded-xl"
+                style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
+              >
                 <Plus className="w-4 h-4 mr-2" />
                 Create Note
               </Button>
@@ -425,11 +439,12 @@ export default function NotesPage() {
             {filteredNotes.map(note => (
               <Card
                 key={note.id}
-                className="bg-white/70 backdrop-blur-xl shadow-xl hover:shadow-2xl transition-all hover:scale-105 cursor-pointer group"
+                className="shadow-lg border rounded-2xl hover:shadow-2xl transition-all hover:scale-[1.02] cursor-pointer group"
+                style={{ background: 'var(--theme-background-alt)', borderColor: 'var(--theme-border)' }}
               >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-3">
-                    <h3 className="text-xl font-bold flex-1 group-hover:text-yellow-600 transition">
+                    <h3 className="text-xl font-bold flex-1 transition" style={{ color: 'var(--theme-text-primary)' }}>
                       {note.title}
                     </h3>
                     <button
@@ -443,13 +458,14 @@ export default function NotesPage() {
                         className={`w-5 h-5 ${
                           note.is_favorite
                             ? 'fill-yellow-500 text-yellow-500'
-                            : 'text-gray-400 hover:text-yellow-500'
+                            : 'opacity-40 hover:text-yellow-500'
                         }`}
+                        style={{ color: note.is_favorite ? undefined : 'var(--theme-text-primary)' }}
                       />
                     </button>
                   </div>
 
-                  <p className="text-gray-600 mb-4 line-clamp-3 text-sm">
+                  <p className="mb-4 line-clamp-3 text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>
                     {getPreviewText(note.content)}
                   </p>
 
@@ -458,22 +474,23 @@ export default function NotesPage() {
                       {note.tags.slice(0, 3).map(tag => (
                         <span
                           key={tag}
-                          className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center gap-1"
+                          className="text-xs px-2 py-1 rounded-full flex items-center gap-1 font-semibold"
+                          style={{ background: 'var(--theme-accent)', color: '#fff' }}
                         >
                           <Tag className="w-3 h-3" />
                           {tag}
                         </span>
                       ))}
                       {note.tags.length > 3 && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                        <span className="text-xs px-2 py-1 rounded-full font-semibold" style={{ background: 'var(--theme-surface)', color: 'var(--theme-text-primary)' }}>
                           +{note.tags.length - 3}
                         </span>
                       )}
                     </div>
                   )}
 
-                  <div className="flex items-center justify-between pt-4 border-t">
-                    <span className="text-xs text-gray-500">
+                  <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+                    <span className="text-xs opacity-60" style={{ color: 'var(--theme-text-primary)' }}>
                       {new Date(note.updated_at).toLocaleDateString('en-US', {
                         month: 'short',
                         day: 'numeric',
@@ -487,6 +504,7 @@ export default function NotesPage() {
                           e.stopPropagation();
                           handleEditNote(note);
                         }}
+                        style={{ color: 'var(--theme-text-primary)' }}
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -497,7 +515,7 @@ export default function NotesPage() {
                           e.stopPropagation();
                           handleDeleteNote(note.id);
                         }}
-                        className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                        className="text-red-500 hover:text-red-600 hover:bg-red-500/10"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

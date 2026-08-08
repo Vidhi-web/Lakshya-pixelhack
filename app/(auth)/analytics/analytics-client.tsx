@@ -1,7 +1,6 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { TrendingUp, CheckCircle2, Clock, Target, Trophy, Zap, Calendar, BarChart3 } from 'lucide-react';
+import { TrendingUp, CheckCircle2, Clock, Target, Trophy, Zap, Calendar, BarChart3, Activity } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -31,13 +30,15 @@ interface AnalyticsClientProps {
   };
   recentActivity: any[];
   tasks: any[];
+  goalType: string;
+  goalTitle: string;
 }
 
 const COLORS = {
-  completed: '#10b981',
-  in_progress: '#3b82f6',
-  todo: '#f59e0b',
-  cancelled: '#6b7280',
+  completed: '#f9b17a', // theme accent
+  in_progress: '#675bb2', // theme primary
+  todo: '#8f8f8f', // neutral
+  cancelled: '#ff4d4d', // red
 };
 
 const PRIORITY_COLORS = {
@@ -47,244 +48,190 @@ const PRIORITY_COLORS = {
   low: '#22c55e',
 };
 
-export default function AnalyticsClient({ stats, recentActivity, tasks }: AnalyticsClientProps) {
+export default function AnalyticsClient({ stats, recentActivity, tasks, goalType, goalTitle }: AnalyticsClientProps) {
   const weeklyData = getWeeklyProgressData(tasks);
   const taskDistribution = getTaskDistribution(tasks);
   const priorityData = getPriorityBreakdown(tasks);
   const completionTrend = getCompletionTrend(tasks);
   const hoursByDay = getHoursByDay(tasks);
   
+  // Dynamic goal label based on user's actual goal
+  const goalLabel = (goalType || 'goal').charAt(0).toUpperCase() + (goalType || 'goal').slice(1);
+  const dreamMeterLabel = `${goalLabel} Readiness`;
+  // Use goalProgress if available, otherwise fall back to task completion rate
+  const readinessPercent = stats.goalProgress > 0 ? stats.goalProgress : stats.successRate;
+  const daysRemaining = 45; // Placeholder until target_date integration
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-green-50 to-emerald-50 p-8">
-      <div className="max-w-7xl mx-auto">
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-2">
-            Analytics Dashboard
-          </h1>
-          <p className="text-gray-600">Track your progress and productivity insights</p>
+    <div className="min-h-screen p-4 md:p-8" style={{ background: 'var(--theme-background)' }}>
+      <div className="max-w-7xl mx-auto space-y-6">
+        
+        {/* Readiness Command Center */}
+        <div className="glass-card p-6 md:p-10 flex flex-col md:flex-row items-center gap-10">
+          <div className="relative w-48 h-48 flex-shrink-0 flex items-center justify-center">
+            <svg className="transform -rotate-90 w-full h-full">
+              <circle cx="96" cy="96" r="80" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="12" />
+              <circle 
+                cx="96" cy="96" r="80" fill="none" 
+                stroke="var(--theme-accent)" strokeWidth="12" strokeLinecap="round"
+                strokeDasharray={`${2 * Math.PI * 80}`}
+                strokeDashoffset={`${2 * Math.PI * 80 * (1 - readinessPercent / 100)}`}
+                className="transition-all duration-1000 ease-out"
+              />
+            </svg>
+            <div className="absolute flex flex-col items-center">
+              <span className="text-4xl font-bold text-white">{readinessPercent}%</span>
+              <span className="text-xs text-white/60 mt-1 uppercase tracking-wider">{dreamMeterLabel}</span>
+            </div>
+          </div>
+          
+          <div className="flex-1 text-center md:text-left">
+            <h1 className="text-3xl font-bold text-white mb-2">Your Dream Meter is climbing!</h1>
+            <p className="text-white/70 mb-8 max-w-lg">
+              You are {readinessPercent}% ready for your goal. With {daysRemaining} days remaining, you're on track. Keep up the momentum!
+            </p>
+            
+            <div className="flex flex-wrap justify-center md:justify-start gap-4">
+              <div className="glass-card px-4 py-3 rounded-xl flex items-center gap-3">
+                <CheckCircle2 className="w-5 h-5 text-[var(--theme-accent)]" />
+                <div>
+                  <div className="text-lg font-bold text-white">{stats.completedTasks}</div>
+                  <div className="text-xs text-white/50 uppercase">Tasks Done</div>
+                </div>
+              </div>
+              <div className="glass-card px-4 py-3 rounded-xl flex items-center gap-3">
+                <Clock className="w-5 h-5 text-[var(--theme-primary)]" />
+                <div>
+                  <div className="text-lg font-bold text-white">{Math.round(stats.hoursThisWeek)}</div>
+                  <div className="text-xs text-white/50 uppercase">Hours Logged</div>
+                </div>
+              </div>
+              <div className="glass-card px-4 py-3 rounded-xl flex items-center gap-3">
+                <Activity className="w-5 h-5 text-green-400" />
+                <div>
+                  <div className="text-lg font-bold text-white">{stats.dayStreak}</div>
+                  <div className="text-xs text-white/50 uppercase">Day Streak</div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Key Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-br from-green-500 to-emerald-600 text-white shadow-xl hover:scale-105 transition">
-            <CardContent className="p-6">
-              <Trophy className="w-8 h-8 mb-3 opacity-80" />
-              <div className="text-4xl font-bold mb-1">{stats.successRate}%</div>
-              <div className="text-sm opacity-90">Success Rate</div>
-              <div className="text-xs opacity-75 mt-1">
-                {stats.completedTasks} of {stats.totalTasks} tasks
-              </div>
-            </CardContent>
-          </Card>
+        {/* Bento Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          
+          <div className="glass-card p-6 md:col-span-2">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-[var(--theme-accent)]" />
+              Completion Trend
+            </h3>
+            <ResponsiveContainer width="100%" height={300}>
+              <AreaChart data={completionTrend}>
+                <defs>
+                  <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--theme-accent)" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="var(--theme-accent)" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="date" stroke="rgba(255,255,255,0.4)" style={{ fontSize: '12px' }} />
+                <YAxis stroke="rgba(255,255,255,0.4)" style={{ fontSize: '12px' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--theme-background-alt)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} />
+                <Area type="monotone" dataKey="completed" stroke="var(--theme-accent)" strokeWidth={3} fill="url(#colorCompleted)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
 
-          <Card className="bg-gradient-to-br from-blue-500 to-cyan-600 text-white shadow-xl hover:scale-105 transition">
-            <CardContent className="p-6">
-              <Clock className="w-8 h-8 mb-3 opacity-80" />
-              <div className="text-4xl font-bold mb-1">{Math.round(stats.hoursThisWeek)}</div>
-              <div className="text-sm opacity-90">Hours This Week</div>
-              <div className="text-xs opacity-75 mt-1">
-                Estimated study time
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-500 to-pink-600 text-white shadow-xl hover:scale-105 transition">
-            <CardContent className="p-6">
-              <Zap className="w-8 h-8 mb-3 opacity-80" />
-              <div className="text-4xl font-bold mb-1">{stats.dayStreak}</div>
-              <div className="text-sm opacity-90">Active Days</div>
-              <div className="text-xs opacity-75 mt-1">
-                Days with completions
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-xl hover:scale-105 transition">
-            <CardContent className="p-6">
-              <Target className="w-8 h-8 mb-3 opacity-80" />
-              <div className="text-4xl font-bold mb-1">{stats.goalProgress}%</div>
-              <div className="text-sm opacity-90">Goal Progress</div>
-              <div className="text-xs opacity-75 mt-1">
-                Overall completion
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Main Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Completion Trend Line Chart */}
-          <Card className="bg-white/80 backdrop-blur-xl shadow-xl">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <TrendingUp className="w-5 h-5 text-green-600" />
-                Task Completion Trend
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={completionTrend}>
-                  <defs>
-                    <linearGradient id="colorCompleted" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.8}/>
-                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.1}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                  />
-                  <Area 
-                    type="monotone" 
-                    dataKey="completed" 
-                    stroke="#10b981" 
-                    strokeWidth={2}
-                    fillOpacity={1} 
-                    fill="url(#colorCompleted)" 
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Task Status Pie Chart */}
-          <Card className="bg-white/80 backdrop-blur-xl shadow-xl">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                Task Status Distribution
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold mb-4 flex items-center gap-2" style={{ color: 'var(--theme-text-primary)' }}>
+              <CheckCircle2 className="w-5 h-5" style={{ color: 'var(--theme-primary)' }} />
+              Task Status
+            </h3>
+            <div style={{ overflow: 'hidden' }}>
+              <ResponsiveContainer width="100%" height={280}>
                 <PieChart>
-                  <Pie
-                    data={taskDistribution}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
+                  <Pie 
+                    data={taskDistribution} 
+                    cx="50%" 
+                    cy="50%" 
+                    labelLine={false} 
+                    label={({ percent, cx: labelCx = 0, cy: labelCy = 0, midAngle = 0, innerRadius = 0, outerRadius: or = 0 }) => {
+                      const RADIAN = Math.PI / 180;
+                      const r = (innerRadius as number) + ((or as number) - (innerRadius as number)) * 0.5;
+                      const x = (labelCx as number) + r * Math.cos(-(midAngle as number) * RADIAN);
+                      const y = (labelCy as number) + r * Math.sin(-(midAngle as number) * RADIAN);
+                      return (
+                        <text x={x} y={y} fill="#fff" textAnchor="middle" dominantBaseline="central" fontSize={12} fontWeight={600}>
+                          {`${((percent || 0) * 100).toFixed(0)}%`}
+                        </text>
+                      );
+                    }} 
+                    outerRadius={80} 
                     dataKey="value"
                   >
                     {taskDistribution.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
                     ))}
                   </Pie>
-                  <Tooltip />
+                  <Tooltip contentStyle={{ backgroundColor: 'var(--theme-background-alt)', borderRadius: '8px', border: '1px solid var(--theme-border)', color: 'var(--theme-text-primary)' }} />
+                  <Legend 
+                    verticalAlign="bottom" 
+                    height={36}
+                    formatter={(value: string) => <span style={{ color: 'var(--theme-text-primary)', fontSize: '12px' }}>{value}</span>}
+                  />
                 </PieChart>
               </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+          </div>
 
-        {/* Secondary Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Priority Breakdown Bar Chart */}
-          <Card className="bg-white/80 backdrop-blur-xl shadow-xl">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-orange-600" />
-                Priority Breakdown
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={priorityData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="priority" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                  />
-                  <Bar dataKey="count" fill="#8884d8" radius={[8, 8, 0, 0]}>
-                    {priorityData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.priority as keyof typeof PRIORITY_COLORS]} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Hours by Day */}
-          <Card className="bg-white/80 backdrop-blur-xl shadow-xl">
-            <CardContent className="p-6">
-              <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Calendar className="w-5 h-5 text-purple-600" />
-                Estimated Hours by Day
-              </h3>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={hoursByDay}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                  <XAxis dataKey="day" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                  <Tooltip 
-                    contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                  />
-                  <Bar dataKey="hours" fill="#a855f7" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Weekly Progress */}
-        <Card className="mb-6 bg-white/80 backdrop-blur-xl shadow-xl">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-bold mb-4 flex items-center gap-2">
-              <TrendingUp className="w-5 h-5 text-blue-600" />
-              Weekly Task Progress
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-orange-400" />
+              Priority Breakdown
             </h3>
             <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={weeklyData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="day" stroke="#6b7280" style={{ fontSize: '12px' }} />
-                <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: '#fff', borderRadius: '8px', border: '1px solid #e5e7eb' }}
-                />
-                <Legend />
-                <Line 
-                  type="monotone" 
-                  dataKey="completed" 
-                  stroke="#10b981" 
-                  strokeWidth={3}
-                  dot={{ r: 5 }}
-                  activeDot={{ r: 7 }}
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="total" 
-                  stroke="#3b82f6" 
-                  strokeWidth={3}
-                  dot={{ r: 5 }}
-                  activeDot={{ r: 7 }}
-                />
-              </LineChart>
+              <BarChart data={priorityData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="priority" stroke="rgba(255,255,255,0.4)" style={{ fontSize: '12px' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--theme-background-alt)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                  {priorityData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={PRIORITY_COLORS[entry.priority.toLowerCase() as keyof typeof PRIORITY_COLORS] || '#8884d8'} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Activity Log */}
-        <Card className="bg-white/80 backdrop-blur-xl shadow-xl">
-          <CardContent className="p-6">
-            <h3 className="text-xl font-bold mb-4">Recent Activity</h3>
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold text-white mb-4 flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-purple-400" />
+              Hours by Day
+            </h3>
+            <ResponsiveContainer width="100%" height={250}>
+              <BarChart data={hoursByDay}>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                <XAxis dataKey="day" stroke="rgba(255,255,255,0.4)" style={{ fontSize: '12px' }} />
+                <Tooltip contentStyle={{ backgroundColor: 'var(--theme-background-alt)', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }} cursor={{ fill: 'rgba(255,255,255,0.05)' }} />
+                <Bar dataKey="hours" fill="var(--theme-primary)" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="glass-card p-6">
+            <h3 className="text-lg font-bold text-white mb-4">Recent Activity</h3>
             {recentActivity.length > 0 ? (
-              <div className="space-y-3 max-h-96 overflow-y-auto">
+              <div className="space-y-4 max-h-[250px] overflow-y-auto pr-2 custom-scrollbar">
                 {recentActivity.map((activity, i) => (
-                  <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 hover:shadow-md transition">
-                    <div className={`w-3 h-3 rounded-full ${
-                      activity.event_type === 'task_completed' ? 'bg-green-500' :
-                      activity.event_type === 'goal_created' ? 'bg-blue-500' :
-                      activity.event_type === 'pomodoro_completed' ? 'bg-red-500' :
-                      'bg-purple-500'
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-lg bg-white/5 hover:bg-white/10 transition border border-white/5">
+                    <div className={`w-2 h-2 rounded-full ${
+                      activity.event_type === 'task_completed' ? 'bg-[var(--theme-accent)]' : 'bg-[var(--theme-primary)]'
                     }`}></div>
-                    <div className="flex-1">
-                      <p className="font-medium capitalize">{activity.event_type.replace('_', ' ')}</p>
-                      <p className="text-sm text-gray-500">
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-white text-sm capitalize truncate">{activity.event_type.replace('_', ' ')}</p>
+                      <p className="text-xs text-white/50">
                         {new Date(activity.timestamp).toLocaleString('en-US', {
-                          month: 'short',
-                          day: 'numeric',
-                          hour: '2-digit',
-                          minute: '2-digit'
+                          month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit'
                         })}
                       </p>
                     </div>
@@ -292,18 +239,20 @@ export default function AnalyticsClient({ stats, recentActivity, tasks }: Analyt
                 ))}
               </div>
             ) : (
-              <div className="text-center py-8 text-gray-500">
-                <Target className="w-12 h-12 mx-auto mb-3 opacity-50" />
-                <p>No activity yet. Start completing tasks!</p>
+              <div className="text-center py-8 text-white/40">
+                <Target className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                <p className="text-sm">No activity yet</p>
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+
+        </div>
       </div>
     </div>
   );
 }
 
+// Helpers unchanged from original logic
 function getWeeklyProgressData(tasks: any[]) {
   const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   const today = new Date();

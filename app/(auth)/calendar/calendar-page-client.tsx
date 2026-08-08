@@ -2,13 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { Calendar, dateFnsLocalizer, View } from 'react-big-calendar';
-import { format, parse, startOfWeek, getDay, isToday, parseISO } from 'date-fns';
+import { format, parse, startOfWeek, getDay, isToday, isSameDay } from 'date-fns';
 import { enUS } from 'date-fns/locale';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { X, Clock, Plus } from 'lucide-react';
+import { X, Clock, Plus, CheckCircle2, Circle } from 'lucide-react';
 import toast, { Toaster } from 'react-hot-toast';
 import 'react-big-calendar/lib/css/react-big-calendar.css';
 
@@ -23,12 +23,15 @@ interface CalendarEvent {
   end: Date;
   color?: string;
   event_type?: string;
+  task_id?: string;
+  status?: string;
 }
 
 export default function CalendarPageClient() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [view, setView] = useState<View>('month');
   const [date, setDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [showModal, setShowModal] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
   const [loading, setLoading] = useState(true);
@@ -49,7 +52,7 @@ export default function CalendarPageClient() {
       if (!response.ok) throw new Error('Failed to fetch');
       
       const data = await response.json();
-      const mapped = data.events.map((e: any) => ({
+      const mapped = (data.events || []).map((e: any) => ({
         id: e.id,
         title: e.title,
         description: e.description,
@@ -57,6 +60,8 @@ export default function CalendarPageClient() {
         end: new Date(e.end_time),
         color: e.color,
         event_type: e.event_type,
+        task_id: e.task_id,
+        status: e.status,
       }));
       
       setEvents(mapped);
@@ -72,6 +77,7 @@ export default function CalendarPageClient() {
   }, [fetchEvents]);
 
   const handleSelectSlot = ({ start, end }: { start: Date; end: Date }) => {
+    setSelectedDate(start);
     setSelectedEvent(null);
     setFormData({
       title: '',
@@ -85,6 +91,7 @@ export default function CalendarPageClient() {
   };
 
   const handleSelectEvent = (event: CalendarEvent) => {
+    setSelectedDate(event.start);
     setSelectedEvent(event);
     setFormData({
       title: event.title,
@@ -95,6 +102,38 @@ export default function CalendarPageClient() {
       event_type: event.event_type || 'event',
     });
     setShowModal(true);
+  };
+
+  const handleToggleTaskStatus = async (event: CalendarEvent) => {
+    if (!event.task_id) return;
+    const isCompleted = event.title.startsWith('✅');
+    const newStatus = isCompleted ? 'todo' : 'completed';
+
+    // Optimistic UI update
+    setEvents(prev => prev.map(e => {
+      if (e.id === event.id) {
+        return {
+          ...e,
+          title: isCompleted ? e.title.replace('✅', '📋') : e.title.replace('📋', '✅'),
+          color: isCompleted ? '#f59e0b' : '#10b981',
+        };
+      }
+      return e;
+    }));
+
+    try {
+      const res = await fetch(`/api/tasks/${event.task_id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!res.ok) throw new Error();
+      toast.success(newStatus === 'completed' ? 'Task completed! 🎉' : 'Task reopened');
+      fetchEvents();
+    } catch (e) {
+      toast.error('Failed to update task');
+      fetchEvents();
+    }
   };
 
   const handleSave = async () => {
@@ -162,42 +201,44 @@ export default function CalendarPageClient() {
     }
   };
 
-  const todayEvents = events
-    .filter(e => isToday(e.start))
+  // Events for the currently selected day
+  const selectedDayEvents = events
+    .filter(e => isSameDay(e.start, selectedDate))
     .sort((a, b) => a.start.getTime() - b.start.getTime());
 
   const eventStyleGetter = (event: CalendarEvent) => ({
     style: {
-      backgroundColor: event.color || '#3b82f6',
+      backgroundColor: event.color || 'var(--theme-accent)',
       color: '#ffffff',
       border: 'none',
-      borderRadius: '4px',
-      padding: '2px 4px',
-      fontSize: '13px',
+      borderRadius: '6px',
+      padding: '3px 6px',
+      fontSize: '12px',
+      fontWeight: '600',
     },
   });
 
   if (loading) {
     return (
-      <div className="page-background min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4" />
-          <p className="text-sm text-gray-600">Loading calendar...</p>
+          <div className="w-12 h-12 border-4 border-t-transparent rounded-full animate-spin mx-auto mb-4" style={{ borderColor: 'var(--theme-accent)', borderTopColor: 'transparent' }} />
+          <p className="text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Loading calendar...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="page-background min-h-screen">
+    <div className="min-h-screen p-4 md:p-8 transition-colors" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
       <Toaster position="top-right" />
       
-      <div className="page-container">
+      <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">Calendar</h1>
-            <p className="text-sm text-gray-600">Manage your schedule and events</p>
+            <h1 className="text-3xl font-extrabold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Calendar</h1>
+            <p className="text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>Manage your schedule, tasks, and events</p>
           </div>
           <Button
             onClick={() => {
@@ -214,7 +255,8 @@ export default function CalendarPageClient() {
               setSelectedEvent(null);
               setShowModal(true);
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
+            className="font-bold text-white shadow-lg rounded-xl"
+            style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
           >
             <Plus className="w-4 h-4 mr-2" />
             New Event
@@ -223,7 +265,7 @@ export default function CalendarPageClient() {
 
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Main Calendar */}
-          <Card className="lg:col-span-3 border border-gray-200 shadow-sm">
+          <Card className="lg:col-span-3 glass-card border shadow-xl rounded-2xl" style={{ borderColor: 'var(--theme-border)' }}>
             <CardContent className="p-6">
               <div style={{ height: '700px' }}>
                 <Calendar
@@ -232,7 +274,7 @@ export default function CalendarPageClient() {
                   view={view}
                   onView={setView}
                   date={date}
-                  onNavigate={setDate}
+                  onNavigate={(newDate) => { setDate(newDate); setSelectedDate(newDate); }}
                   onSelectSlot={handleSelectSlot}
                   onSelectEvent={handleSelectEvent}
                   selectable
@@ -242,58 +284,118 @@ export default function CalendarPageClient() {
               </div>
 
               {/* Legend */}
-              <div className="mt-4 flex items-center gap-6 text-xs border-t border-gray-200 pt-4">
+              <div className="mt-4 flex items-center gap-6 text-xs border-t pt-4" style={{ borderColor: 'var(--theme-border)' }}>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#3b82f6' }} />
-                  <span className="text-gray-600">Event</span>
+                  <span style={{ color: 'var(--theme-text-primary)', opacity: 0.8 }}>Event</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#f59e0b' }} />
-                  <span className="text-gray-600">Task</span>
+                  <span style={{ color: 'var(--theme-text-primary)', opacity: 0.8 }}>Pending Task</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#10b981' }} />
-                  <span className="text-gray-600">Class</span>
+                  <span style={{ color: 'var(--theme-text-primary)', opacity: 0.8 }}>Completed Task</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded" style={{ backgroundColor: '#ef4444' }} />
-                  <span className="text-gray-600">Pomodoro</span>
+                  <span style={{ color: 'var(--theme-text-primary)', opacity: 0.8 }}>Urgent / Pomodoro</span>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Today Sidebar */}
-          <Card className="border border-gray-200 shadow-sm">
-            <CardContent className="p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                <Clock className="w-5 h-5 text-blue-600" />
-                Today
-              </h3>
-              {todayEvents.length === 0 ? (
-                <p className="text-sm text-gray-500 text-center py-8">No events today</p>
+          {/* Selected Day Sidebar */}
+          <Card className="glass-card border shadow-xl rounded-2xl max-h-[780px] flex flex-col" style={{ borderColor: 'var(--theme-border)' }}>
+            <CardContent className="p-6 flex flex-col flex-1 overflow-hidden">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold flex items-center gap-2" style={{ color: 'var(--theme-text-primary)' }}>
+                  <Clock className="w-5 h-5" style={{ color: 'var(--theme-accent)' }} />
+                  {isToday(selectedDate) ? 'Today' : format(selectedDate, 'MMM d, yyyy')}
+                </h3>
+                <span className="text-xs font-semibold px-2.5 py-0.5 rounded-full" style={{ background: 'var(--theme-background-alt)', color: 'var(--theme-text-primary)' }}>
+                  {selectedDayEvents.length} items
+                </span>
+              </div>
+
+              {selectedDayEvents.length === 0 ? (
+                <div className="text-center py-12 space-y-2">
+                  <p className="text-sm opacity-60" style={{ color: 'var(--theme-text-primary)' }}>
+                    No events scheduled for this day
+                  </p>
+                  <p className="text-xs opacity-40" style={{ color: 'var(--theme-text-primary)' }}>
+                    Click any slot on the calendar to schedule a task or event
+                  </p>
+                </div>
               ) : (
-                <div className="space-y-3">
-                  {todayEvents.map(event => (
-                    <div
-                      key={event.id}
-                      onClick={() => handleSelectEvent(event)}
-                      className="p-3 border border-gray-200 rounded-lg hover:border-gray-300 cursor-pointer transition"
-                    >
-                      <div className="flex items-start gap-2">
-                        <div
-                          className="w-1 h-full rounded"
-                          style={{ backgroundColor: event.color }}
-                        />
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 truncate">{event.title}</p>
-                          <p className="text-xs text-gray-500 mt-1">
-                            {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')}
-                          </p>
+                <div className="space-y-3 overflow-y-auto max-h-[650px] pr-2 custom-scrollbar flex-1">
+                  {selectedDayEvents.map(event => {
+                    const isTask = event.event_type === 'task' || !!event.task_id;
+                    const isCompleted = event.title.startsWith('✅') || event.color === '#10b981';
+
+                    return (
+                      <div
+                        key={event.id}
+                        className="p-3 border rounded-xl hover:scale-[1.01] transition-all glass-card relative group"
+                        style={{ borderColor: 'var(--theme-border)' }}
+                      >
+                        <div className="flex items-start gap-3">
+                          <div
+                            className="w-1.5 h-full min-h-[36px] rounded-full flex-shrink-0 mt-0.5"
+                            style={{ backgroundColor: event.color || 'var(--theme-accent)' }}
+                          />
+                          <div 
+                            className="flex-1 min-w-0 cursor-pointer"
+                            onClick={() => handleSelectEvent(event)}
+                          >
+                            <div className="flex items-center justify-between gap-1">
+                              <p 
+                                className={`text-sm font-bold truncate ${isCompleted ? 'line-through opacity-70' : ''}`} 
+                                style={{ color: 'var(--theme-text-primary)' }}
+                              >
+                                {event.title}
+                              </p>
+                              <span 
+                                className="text-[10px] uppercase font-extrabold px-1.5 py-0.5 rounded-md flex-shrink-0"
+                                style={{ 
+                                  background: isCompleted ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                                  color: isCompleted ? '#10b981' : '#f59e0b' 
+                                }}
+                              >
+                                {isCompleted ? 'Done' : 'Pending'}
+                              </span>
+                            </div>
+                            <p className="text-xs opacity-70 mt-1" style={{ color: 'var(--theme-text-primary)' }}>
+                              {format(event.start, 'h:mm a')} - {format(event.end, 'h:mm a')}
+                            </p>
+                            {event.description && (
+                              <p className="text-xs opacity-50 mt-1 line-clamp-1" style={{ color: 'var(--theme-text-primary)' }}>
+                                {event.description}
+                              </p>
+                            )}
+                          </div>
+
+                          {/* Quick Toggle Checkbox for Tasks */}
+                          {isTask && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleTaskStatus(event);
+                              }}
+                              className="p-1 hover:scale-110 transition-transform flex-shrink-0 mt-0.5"
+                              title={isCompleted ? 'Mark as Pending' : 'Mark as Completed'}
+                            >
+                              {isCompleted ? (
+                                <CheckCircle2 className="w-5 h-5 text-emerald-500" />
+                              ) : (
+                                <Circle className="w-5 h-5 opacity-40 hover:opacity-100" style={{ color: 'var(--theme-text-primary)' }} />
+                              )}
+                            </button>
+                          )}
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>
@@ -302,83 +404,89 @@ export default function CalendarPageClient() {
 
         {/* Event Modal */}
         {showModal && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-lg bg-white">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-lg glass-card border rounded-2xl shadow-2xl" style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-900">
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text-primary)' }}>
                     {selectedEvent ? 'Edit Event' : 'New Event'}
                   </h2>
-                  <button onClick={() => setShowModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <button onClick={() => setShowModal(false)} className="p-1 rounded-full hover:bg-white/10 transition" style={{ color: 'var(--theme-text-primary)' }}>
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
+                    <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Title *</label>
                     <Input
                       value={formData.title}
                       onChange={e => setFormData({ ...formData, title: e.target.value })}
                       placeholder="Event title"
-                      className="border-gray-300"
+                      className="rounded-xl"
+                      style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                    <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Description</label>
                     <Textarea
                       value={formData.description}
                       onChange={e => setFormData({ ...formData, description: e.target.value })}
                       placeholder="Add description..."
                       rows={3}
-                      className="border-gray-300"
+                      className="rounded-xl"
+                      style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Start</label>
+                      <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Start</label>
                       <Input
                         type="datetime-local"
                         value={formData.start}
                         onChange={e => setFormData({ ...formData, start: e.target.value })}
-                        className="border-gray-300"
+                        className="rounded-xl"
+                        style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">End</label>
+                      <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>End</label>
                       <Input
                         type="datetime-local"
                         value={formData.end}
                         onChange={e => setFormData({ ...formData, end: e.target.value })}
-                        className="border-gray-300"
+                        className="rounded-xl"
+                        style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                       />
                     </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Type</label>
+                      <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Type</label>
                       <select
                         value={formData.event_type}
                         onChange={e => setFormData({ ...formData, event_type: e.target.value })}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm"
+                        className="w-full p-2.5 rounded-xl border bg-transparent text-sm font-medium"
+                        style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                       >
-                        <option value="event">Event</option>
-                        <option value="task">Task</option>
-                        <option value="class">Class</option>
-                        <option value="pomodoro">Pomodoro</option>
+                        <option value="event" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>Event</option>
+                        <option value="task" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>Task</option>
+                        <option value="class" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>Class</option>
+                        <option value="pomodoro" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>Pomodoro</option>
                       </select>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                      <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Color</label>
                       <div className="flex gap-2">
                         {['#3b82f6', '#10b981', '#f59e0b', '#ef4444'].map(c => (
                           <button
                             key={c}
+                            type="button"
                             onClick={() => setFormData({ ...formData, color: c })}
-                            className={`w-8 h-8 rounded border-2 ${formData.color === c ? 'border-gray-900' : 'border-gray-200'}`}
+                            className={`w-8 h-8 rounded-full border-2 transition-transform ${formData.color === c ? 'scale-110 border-white shadow' : 'border-transparent'}`}
                             style={{ backgroundColor: c }}
                           />
                         ))}
@@ -392,7 +500,7 @@ export default function CalendarPageClient() {
                         onClick={handleDelete}
                         disabled={saving}
                         variant="outline"
-                        className="text-red-600 border-red-600 hover:bg-red-50"
+                        className="border-red-500 text-red-500 hover:bg-red-500/10 rounded-xl"
                       >
                         Delete
                       </Button>
@@ -400,7 +508,8 @@ export default function CalendarPageClient() {
                     <Button
                       onClick={handleSave}
                       disabled={saving}
-                      className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                      className="flex-1 font-bold text-white rounded-xl"
+                      style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
                     >
                       {saving ? 'Saving...' : selectedEvent ? 'Update' : 'Create'}
                     </Button>

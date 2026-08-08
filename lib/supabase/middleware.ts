@@ -1,6 +1,21 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
+// All routes that require authentication
+const PROTECTED_ROUTES = [
+  '/dashboard',
+  '/roadmap',
+  '/pomodoro',
+  '/tasks',
+  '/planner',
+  '/calendar',
+  '/analytics',
+  '/notes',
+  '/timetable',
+  '/goals',
+  '/personalize',
+];
+
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({
     request,
@@ -33,19 +48,25 @@ export async function updateSession(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Protect authenticated routes
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  const pathname = request.nextUrl.pathname;
+
+  // Protect all authenticated routes
+  const isProtectedRoute = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  if (!user && isProtectedRoute) {
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     return NextResponse.redirect(url);
   }
 
   // Redirect authenticated users away from auth pages
-  if (user && (request.nextUrl.pathname === '/login' || request.nextUrl.pathname === '/signup')) {
+  if (user && (pathname === '/login' || pathname === '/signup')) {
     const url = request.nextUrl.clone();
     url.pathname = '/dashboard';
     return NextResponse.redirect(url);
   }
+
+  // Pass pathname to downstream server components via header
+  supabaseResponse.headers.set('x-next-pathname', pathname);
 
   return supabaseResponse;
 }

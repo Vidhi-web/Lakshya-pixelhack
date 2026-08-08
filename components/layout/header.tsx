@@ -6,7 +6,6 @@ import { Target, Menu, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { ThemeToggle } from '@/components/theme-toggle';
 
 export function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -18,7 +17,6 @@ export function Header() {
   useEffect(() => {
     checkUser();
     
-    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setIsLoggedIn(!!session);
       setLoading(false);
@@ -41,54 +39,60 @@ export function Header() {
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-emerald-100/20 bg-white/80 backdrop-blur-xl supports-[backdrop-filter]:bg-white/60 dark:bg-gray-950/80">
+    <header 
+      className="sticky top-0 z-50 w-full border-b backdrop-blur-xl transition-colors"
+      style={{ 
+        background: 'var(--theme-background-alt)', 
+        borderColor: 'var(--theme-border)' 
+      }}
+    >
       <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="relative">
-              <div className="absolute inset-0 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl blur-sm group-hover:blur-md transition-all" />
-              <div className="relative w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all">
-                <Target className="h-6 w-6 text-white" />
-              </div>
+            <div 
+              className="relative w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-all"
+              style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
+            >
+              <Target className="h-6 w-6 text-white" />
             </div>
-            <span className="text-2xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+            <span className="text-2xl font-extrabold tracking-tight" style={{ color: 'var(--theme-accent)' }}>
               Lakshya
             </span>
           </Link>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center gap-8">
-            <a href="/#features" className="text-gray-700 hover:text-emerald-600 font-medium transition-colors">
+            <a href="/#features" className="font-medium transition-colors hover:opacity-80" style={{ color: 'var(--theme-text-primary)' }}>
               Features
             </a>
-            <a href="/#how-it-works" className="text-gray-700 hover:text-emerald-600 font-medium transition-colors">
+            <a href="/#how-it-works" className="font-medium transition-colors hover:opacity-80" style={{ color: 'var(--theme-text-primary)' }}>
               How It Works
             </a>
-            <a href="/#goals" className="text-gray-700 hover:text-emerald-600 font-medium transition-colors">
+            <a href="/#goals" className="font-medium transition-colors hover:opacity-80" style={{ color: 'var(--theme-text-primary)' }}>
               Goals
             </a>
-            <a href="/#pricing" className="text-gray-700 hover:text-emerald-600 font-medium transition-colors">
+            <a href="/#pricing" className="font-medium transition-colors hover:opacity-80" style={{ color: 'var(--theme-text-primary)' }}>
               Pricing
             </a>
           </div>
 
           {/* CTA Buttons */}
           <div className="hidden md:flex items-center gap-3">
-            <ThemeToggle />
             {loading ? (
-              <div className="w-32 h-10 bg-gray-100 animate-pulse rounded-lg" />
+              <div className="w-32 h-10 bg-white/10 animate-pulse rounded-lg" />
             ) : isLoggedIn ? (
               <>
                 <Link href="/dashboard">
-                  <Button variant="ghost" className="font-medium">
+                  <Button variant="ghost" className="font-semibold hover:bg-white/10" style={{ color: 'var(--theme-text-primary)' }}>
                     Dashboard
                   </Button>
                 </Link>
                 <Button 
                   onClick={handleSignOut}
                   variant="outline" 
-                  className="font-medium border-emerald-600 text-emerald-600 hover:bg-emerald-50"
+                  className="font-bold border-2 rounded-xl"
+                  style={{ borderColor: 'var(--theme-accent)', color: 'var(--theme-accent)' }}
                 >
                   Sign Out
                 </Button>
@@ -96,12 +100,15 @@ export function Header() {
             ) : (
               <>
                 <Link href="/login">
-                  <Button variant="ghost" className="font-medium">
+                  <Button variant="ghost" className="font-semibold hover:bg-white/10" style={{ color: 'var(--theme-text-primary)' }}>
                     Sign In
                   </Button>
                 </Link>
                 <Link href="/signup">
-                  <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white shadow-lg hover:shadow-xl transition-all">
+                  <Button 
+                    className="font-bold text-white shadow-lg rounded-xl"
+                    style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
+                  >
                     Get Started Free
                   </Button>
                 </Link>
@@ -112,54 +119,59 @@ export function Header() {
           {/* Mobile menu button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+            className="md:hidden p-2 rounded-lg hover:bg-white/10 transition-colors"
+            style={{ color: 'var(--theme-text-primary)' }}
           >
             {mobileMenuOpen ? (
-              <X className="h-6 w-6 text-gray-700" />
+              <X className="h-6 w-6" />
             ) : (
-              <Menu className="h-6 w-6 text-gray-700" />
+              <Menu className="h-6 w-6" />
             )}
           </button>
         </div>
 
         {/* Mobile Navigation */}
         {mobileMenuOpen && (
-          <div className="md:hidden py-4 space-y-4 animate-in slide-in-from-top">
+          <div className="md:hidden py-4 space-y-4 border-t border-white/10">
             <a 
               href="/#features" 
-              className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+              className="block py-2 font-medium transition-colors"
+              style={{ color: 'var(--theme-text-primary)' }}
               onClick={() => setMobileMenuOpen(false)}
             >
               Features
             </a>
             <a 
               href="/#how-it-works" 
-              className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+              className="block py-2 font-medium transition-colors"
+              style={{ color: 'var(--theme-text-primary)' }}
               onClick={() => setMobileMenuOpen(false)}
             >
               How It Works
             </a>
             <a 
               href="/#goals" 
-              className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+              className="block py-2 font-medium transition-colors"
+              style={{ color: 'var(--theme-text-primary)' }}
               onClick={() => setMobileMenuOpen(false)}
             >
               Goals
             </a>
             <a 
               href="/#pricing" 
-              className="block py-2 text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+              className="block py-2 font-medium transition-colors"
+              style={{ color: 'var(--theme-text-primary)' }}
               onClick={() => setMobileMenuOpen(false)}
             >
               Pricing
             </a>
             <div className="pt-4 space-y-2">
               {loading ? (
-                <div className="w-full h-10 bg-gray-100 animate-pulse rounded-lg" />
+                <div className="w-full h-10 bg-white/10 animate-pulse rounded-lg" />
               ) : isLoggedIn ? (
                 <>
                   <Link href="/dashboard" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full border-white/20" style={{ color: 'var(--theme-text-primary)' }}>
                       Dashboard
                     </Button>
                   </Link>
@@ -169,7 +181,8 @@ export function Header() {
                       setMobileMenuOpen(false);
                     }}
                     variant="outline"
-                    className="w-full border-emerald-600 text-emerald-600"
+                    className="w-full border-2"
+                    style={{ borderColor: 'var(--theme-accent)', color: 'var(--theme-accent)' }}
                   >
                     Sign Out
                   </Button>
@@ -177,12 +190,12 @@ export function Header() {
               ) : (
                 <>
                   <Link href="/login" onClick={() => setMobileMenuOpen(false)}>
-                    <Button variant="outline" className="w-full">
+                    <Button variant="outline" className="w-full border-white/20" style={{ color: 'var(--theme-text-primary)' }}>
                       Sign In
                     </Button>
                   </Link>
                   <Link href="/signup" onClick={() => setMobileMenuOpen(false)}>
-                    <Button className="w-full bg-gradient-to-r from-emerald-600 to-teal-600">
+                    <Button className="w-full font-bold text-white" style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}>
                       Get Started Free
                     </Button>
                   </Link>

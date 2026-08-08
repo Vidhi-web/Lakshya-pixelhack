@@ -24,7 +24,7 @@ export default async function DashboardPage() {
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(1)
-    .single();
+    .maybeSingle();
 
   // If no active goal, redirect to goal selection
   if (!activeGoal) {
@@ -62,7 +62,7 @@ export default async function DashboardPage() {
   const targetDate = activeGoal.target_date ? new Date(activeGoal.target_date) : null;
   const today = new Date();
   const daysRemaining = targetDate
-    ? Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24))
+    ? Math.max(0, Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)))
     : null;
 
   return (

@@ -19,7 +19,7 @@ export async function GET() {
       .select('*')
       .eq('user_id', user.id)
       .eq('is_active', true)
-      .single();
+      .maybeSingle();
 
     if (!activeGoal) {
       return NextResponse.json({ recommendations: [] });
@@ -98,7 +98,13 @@ Format as JSON:
     const responseText = result.response.text();
 
     // Try to parse JSON from response
-    let recommendations = { recommendations: [], summary: '' };
+    interface Recommendation {
+      priority: string;
+      text: string;
+      taskIds: string[];
+    }
+    
+    let recommendations: { recommendations: Recommendation[], summary: string } = { recommendations: [], summary: '' };
     try {
       // Extract JSON from markdown code blocks if present
       const jsonMatch = responseText.match(/\`\`\`json\n([\s\S]*?)\n\`\`\`/) || responseText.match(/\{[\s\S]*\}/);

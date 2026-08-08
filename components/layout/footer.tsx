@@ -19,7 +19,7 @@ export function Footer() {
               </span>
             </Link>
             <p className="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
-              Your AI-powered companion for achieving ambitious goals. From GATE to placements, we've got you covered.
+              Your AI-powered companion for achieving ambitious goals — exams, placements, startups, or skill mastery, we've got you covered.
             </p>
             {/* Social Links */}
             <div className="flex gap-3">

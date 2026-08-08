@@ -23,6 +23,9 @@ interface DashboardClientProps {
   };
 }
 
+import { XPWidget } from '@/components/gamification/xp-widget';
+import { WhatNowButton } from '@/components/saathi/what-now-button';
+
 export default function DashboardClient({ activeGoal, milestones, tasks, stats }: DashboardClientProps) {
   const router = useRouter();
   const [localTasks, setLocalTasks] = useState(tasks);
@@ -58,24 +61,26 @@ export default function DashboardClient({ activeGoal, milestones, tasks, stats }
   const targetDate = activeGoal.target_date ? new Date(activeGoal.target_date) : null;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-cyan-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      <div className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
-                <Target className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-                  {activeGoal.title}
-                </h1>
-                <p className="text-gray-600 dark:text-gray-400">
-                  {activeGoal.description}
-                </p>
-              </div>
+    <div className="min-h-screen transition-colors" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
+      <div className="container mx-auto px-4 py-8 space-y-8">
+        {/* Header & Quick Action */}
+        <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg">
+              <Target className="w-6 h-6 text-white" />
             </div>
+            <div>
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
+                {activeGoal.title}
+              </h1>
+              <p className="text-gray-600 dark:text-gray-400">
+                {activeGoal.description}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <WhatNowButton />
             <Link href="/tasks">
               <Button className="bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700">
                 View All Tasks
@@ -83,6 +88,14 @@ export default function DashboardClient({ activeGoal, milestones, tasks, stats }
             </Link>
           </div>
         </div>
+
+        {/* XP Progress & Streak Banner (Part 3) */}
+        <XPWidget 
+          totalXp={stats.completedTasks * 50 + stats.completedMilestones * 150}
+          currentLevel={Math.floor(Math.sqrt((stats.completedTasks * 50 + stats.completedMilestones * 150) / 50)) + 1}
+          currentStreak={5}
+          longestStreak={7}
+        />
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">

@@ -58,17 +58,18 @@ export default function PomodoroClient() {
 
     if (isActive) {
       interval = setInterval(() => {
-        if (seconds === 0) {
-          if (minutes === 0) {
-            handleTimerComplete();
-          } else {
-            setMinutes(minutes - 1);
-            setSeconds(59);
-          }
-        } else {
+        if (seconds > 0) {
           setSeconds(seconds - 1);
+        } else if (minutes > 0) {
+          setMinutes(minutes - 1);
+          setSeconds(59);
+        } else {
+          // Timer finished
+          handleTimerComplete();
         }
       }, 1000);
+    } else {
+      if (interval) clearInterval(interval);
     }
 
     return () => {
@@ -76,66 +77,38 @@ export default function PomodoroClient() {
     };
   }, [isActive, minutes, seconds]);
 
-  // Save to localStorage for persistence
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('pomodoro', JSON.stringify({
-        minutes,
-        seconds,
-        mode,
-        completedSessions,
-        isActive: false, // Don't persist running state
-      }));
-    }
-  }, [minutes, seconds, mode, completedSessions]);
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('pomodoro');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          setMinutes(data.minutes || workDuration);
-          setSeconds(data.seconds || 0);
-          setMode(data.mode || 'work');
-          setCompletedSessions(data.completedSessions || 0);
-        } catch (e) {
-          console.error('Failed to load saved timer');
-        }
-      }
-    }
-  }, []);
-
   const handleTimerComplete = async () => {
-    setIsActive(false);
-
-    // Play notification
+    // Play sound notification
     if (typeof window !== 'undefined' && 'Notification' in window) {
       if (Notification.permission === 'granted') {
-        new Notification('Pomodoro Timer', {
-          body: mode === 'work' ? 'Work session complete! Time for a break.' : 'Break is over! Ready to focus?',
+        new Notification(mode === 'work' ? 'Work session complete!' : 'Break time over!', {
+          body: mode === 'work' ? 'Time for a break!' : 'Back to work!',
         });
       }
     }
 
-    // Save completed work session
-    if (mode === 'work' && sessionStartTime) {
-      const endTime = new Date();
+    if (mode === 'work') {
+      const newCompleted = completedSessions + 1;
+      setCompletedSessions(newCompleted);
+      
+      // Save completed work session to DB
       try {
+        const endTime = new Date();
+        const startTime = sessionStartTime || new Date(endTime.getTime() - workDuration * 60 * 1000);
+        
         await fetch('/api/pomodoro', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            title: `Focus Session ${completedSessions + 1}`,
-            start_time: sessionStartTime.toISOString(),
+            duration_minutes: workDuration,
+            completed: true,
+            start_time: startTime.toISOString(),
             end_time: endTime.toISOString(),
           }),
         });
 
-        setCompletedSessions(prev => prev + 1);
         fetchSessions();
-        toast.success('Session completed!');
+        toast.success(`🎉 Session ${newCompleted}/${totalSessions} completed!`);
       } catch (error) {
         console.error('Error saving session:', error);
       }
@@ -184,6 +157,7 @@ export default function PomodoroClient() {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('pomodoro');
     }
+    toast.success('Sessions reset');
   };
 
   const progress = mode === 'work' 
@@ -197,22 +171,23 @@ export default function PomodoroClient() {
   }, 0);
 
   return (
-    <div className="min-h-screen bg-gray-50 p-8">
+    <div className="min-h-screen p-4 md:p-8 transition-colors" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
       <Toaster position="top-right" />
       
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto space-y-6">
         {/* Header */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-1">Pomodoro Timer</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-3xl font-extrabold mb-1" style={{ color: 'var(--theme-text-primary)' }}>Pomodoro Timer</h1>
+            <p className="text-sm opacity-70" style={{ color: 'var(--theme-text-primary)' }}>
               {completedSessions} of {totalSessions} sessions completed
             </p>
           </div>
           <Button
             variant="outline"
             onClick={() => setShowSettings(true)}
-            className="border-gray-300"
+            className="rounded-xl border"
+            style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}
           >
             <Settings className="w-4 h-4 mr-2" />
             Settings
@@ -220,10 +195,10 @@ export default function PomodoroClient() {
         </div>
 
         <div className="grid lg:grid-cols-3 gap-6">
-          {/* Main Timer */}
+          {/* Main Timer Card */}
           <div className="lg:col-span-2">
-            <Card className="border border-gray-200 shadow-sm">
-              <CardContent className="p-12">
+            <Card className="glass-card border shadow-xl rounded-2xl" style={{ borderColor: 'var(--theme-border)' }}>
+              <CardContent className="p-8 md:p-12">
                 {/* Mode Tabs */}
                 <div className="flex justify-center gap-4 mb-8">
                   <Button
@@ -235,7 +210,12 @@ export default function PomodoroClient() {
                         setSeconds(0);
                       }
                     }}
-                    className={mode === 'work' ? 'bg-blue-600 hover:bg-blue-700' : ''}
+                    className="rounded-xl font-bold px-6"
+                    style={{ 
+                      background: mode === 'work' ? 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' : 'transparent',
+                      color: mode === 'work' ? '#FFFFFF' : 'var(--theme-text-primary)',
+                      borderColor: 'var(--theme-border)' 
+                    }}
                     disabled={isActive}
                   >
                     Focus
@@ -249,7 +229,12 @@ export default function PomodoroClient() {
                         setSeconds(0);
                       }
                     }}
-                    className={mode === 'break' ? 'bg-green-600 hover:bg-green-700' : ''}
+                    className="rounded-xl font-bold px-6"
+                    style={{ 
+                      background: mode === 'break' ? 'var(--theme-surface)' : 'transparent',
+                      color: 'var(--theme-text-primary)',
+                      borderColor: 'var(--theme-border)' 
+                    }}
                     disabled={isActive}
                   >
                     Break
@@ -264,16 +249,17 @@ export default function PomodoroClient() {
                       cy="100"
                       r="90"
                       fill="none"
-                      stroke="#e5e7eb"
-                      strokeWidth="12"
+                      stroke="var(--theme-border)"
+                      strokeWidth="10"
+                      opacity="0.3"
                     />
                     <circle
                       cx="100"
                       cy="100"
                       r="90"
                       fill="none"
-                      stroke={mode === 'work' ? '#3b82f6' : '#10b981'}
-                      strokeWidth="12"
+                      stroke="var(--theme-accent)"
+                      strokeWidth="10"
                       strokeLinecap="round"
                       strokeDasharray={`${2 * Math.PI * 90}`}
                       strokeDashoffset={`${2 * Math.PI * 90 * (1 - progress / 100)}`}
@@ -284,12 +270,10 @@ export default function PomodoroClient() {
                   
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="text-center">
-                      <div className="text-7xl font-bold text-gray-900 tabular-nums">
+                      <div className="text-6xl md:text-7xl font-extrabold tabular-nums tracking-tight" style={{ color: 'var(--theme-text-primary)' }}>
                         {String(minutes).padStart(2, '0')}:{String(seconds).padStart(2, '0')}
                       </div>
-                      <div className={`text-sm font-medium mt-2 ${
-                        mode === 'work' ? 'text-blue-600' : 'text-green-600'
-                      }`}>
+                      <div className="text-sm font-semibold mt-2 tracking-wide uppercase opacity-80" style={{ color: 'var(--theme-accent)' }}>
                         {mode === 'work' ? 'Focus Time' : 'Break Time'}
                       </div>
                     </div>
@@ -301,13 +285,8 @@ export default function PomodoroClient() {
                   <Button
                     onClick={toggleTimer}
                     size="lg"
-                    className={`w-32 ${
-                      isActive
-                        ? 'bg-orange-600 hover:bg-orange-700'
-                        : mode === 'work' 
-                        ? 'bg-blue-600 hover:bg-blue-700'
-                        : 'bg-green-600 hover:bg-green-700'
-                    } text-white`}
+                    className="w-36 rounded-xl font-bold text-white shadow-lg"
+                    style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
                   >
                     {isActive ? (
                       <>
@@ -325,7 +304,8 @@ export default function PomodoroClient() {
                     onClick={resetTimer}
                     size="lg"
                     variant="outline"
-                    className="border-gray-300"
+                    className="rounded-xl border"
+                    style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}
                   >
                     <RotateCcw className="w-5 h-5 mr-2" />
                     Reset
@@ -333,15 +313,15 @@ export default function PomodoroClient() {
                 </div>
 
                 {/* Session Progress */}
-                <div className="mt-8 pt-8 border-t border-gray-200">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">Session Progress</span>
-                    <span className="text-sm text-gray-600">{completedSessions}/{totalSessions}</span>
+                <div className="mt-8 pt-8 border-t" style={{ borderColor: 'var(--theme-border)' }}>
+                  <div className="flex justify-between items-center mb-2 font-medium text-sm" style={{ color: 'var(--theme-text-primary)' }}>
+                    <span>Session Progress</span>
+                    <span className="opacity-70">{completedSessions}/{totalSessions}</span>
                   </div>
-                  <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+                  <div className="w-full h-2 rounded-full overflow-hidden" style={{ background: 'var(--theme-border)' }}>
                     <div
-                      className="h-full bg-blue-600 transition-all"
-                      style={{ width: `${(completedSessions / totalSessions) * 100}%` }}
+                      className="h-full transition-all duration-500"
+                      style={{ width: `${(completedSessions / Math.max(1, totalSessions)) * 100}%`, background: 'var(--theme-accent)' }}
                     />
                   </div>
                 </div>
@@ -352,37 +332,53 @@ export default function PomodoroClient() {
           {/* Stats Sidebar */}
           <div className="space-y-6">
             {/* Today's Stats */}
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="glass-card border shadow-xl rounded-2xl" style={{ borderColor: 'var(--theme-border)' }}>
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Today's Stats</h3>
-                <div className="space-y-4">
-                  <div className="p-4 rounded-lg bg-blue-50 border border-blue-100">
-                    <div className="text-3xl font-bold text-blue-600">{todaySessions.length}</div>
-                    <div className="text-sm text-gray-600">Sessions</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-green-50 border border-green-100">
-                    <div className="text-3xl font-bold text-green-600">{Math.round(totalMinutesStudied)}</div>
-                    <div className="text-sm text-gray-600">Minutes</div>
-                  </div>
-                  <div className="p-4 rounded-lg bg-purple-50 border border-purple-100">
-                    <div className="text-3xl font-bold text-purple-600">
-                      {Math.round(totalMinutesStudied / 60 * 10) / 10}
+                <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--theme-text-primary)' }}>
+                  Today's Stats
+                </h3>
+                <div className="space-y-3">
+                  <div className="p-4 rounded-xl border glass-card flex items-center justify-between" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-surface)' }}>
+                    <div>
+                      <div className="text-xs opacity-60 font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-text-primary)' }}>Sessions</div>
+                      <div className="text-sm opacity-80" style={{ color: 'var(--theme-text-primary)' }}>Completed today</div>
                     </div>
-                    <div className="text-sm text-gray-600">Hours</div>
+                    <div className="text-3xl font-extrabold" style={{ color: 'var(--theme-accent)' }}>{todaySessions.length}</div>
+                  </div>
+
+                  <div className="p-4 rounded-xl border glass-card flex items-center justify-between" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-surface)' }}>
+                    <div>
+                      <div className="text-xs opacity-60 font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-text-primary)' }}>Minutes</div>
+                      <div className="text-sm opacity-80" style={{ color: 'var(--theme-text-primary)' }}>Total focused</div>
+                    </div>
+                    <div className="text-3xl font-extrabold" style={{ color: 'var(--theme-accent)' }}>{Math.round(totalMinutesStudied)}</div>
+                  </div>
+
+                  <div className="p-4 rounded-xl border glass-card flex items-center justify-between" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-surface)' }}>
+                    <div>
+                      <div className="text-xs opacity-60 font-semibold uppercase tracking-wider" style={{ color: 'var(--theme-text-primary)' }}>Hours</div>
+                      <div className="text-sm opacity-80" style={{ color: 'var(--theme-text-primary)' }}>Total hours</div>
+                    </div>
+                    <div className="text-3xl font-extrabold" style={{ color: 'var(--theme-accent)' }}>
+                      {Math.round((totalMinutesStudied / 60) * 10) / 10}
+                    </div>
                   </div>
                 </div>
               </CardContent>
             </Card>
 
             {/* Quick Actions */}
-            <Card className="border border-gray-200 shadow-sm">
+            <Card className="glass-card border shadow-xl rounded-2xl" style={{ borderColor: 'var(--theme-border)' }}>
               <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
+                <h3 className="text-lg font-bold mb-4" style={{ color: 'var(--theme-text-primary)' }}>
+                  Quick Actions
+                </h3>
                 <div className="space-y-2">
                   <Button
                     variant="outline"
-                    className="w-full justify-start"
+                    className="w-full justify-start rounded-xl border hover:bg-white/10"
                     onClick={resetAll}
+                    style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}
                   >
                     <RotateCcw className="w-4 h-4 mr-2" />
                     Reset All Sessions
@@ -395,14 +391,15 @@ export default function PomodoroClient() {
 
         {/* Settings Modal */}
         {showSettings && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <Card className="w-full max-w-md bg-white">
+          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+            <Card className="w-full max-w-md glass-card border rounded-2xl shadow-2xl" style={{ borderColor: 'var(--theme-border)', color: 'var(--theme-text-primary)' }}>
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-xl font-semibold text-gray-900">Timer Settings</h2>
+                  <h2 className="text-xl font-bold" style={{ color: 'var(--theme-text-primary)' }}>Timer Settings</h2>
                   <button
                     onClick={() => setShowSettings(false)}
-                    className="text-gray-400 hover:text-gray-600"
+                    className="p-1 rounded-full hover:bg-white/10 transition"
+                    style={{ color: 'var(--theme-text-primary)' }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -410,7 +407,7 @@ export default function PomodoroClient() {
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>
                       Total Study Time (minutes)
                     </label>
                     <Input
@@ -419,15 +416,16 @@ export default function PomodoroClient() {
                       onChange={(e) => setTotalMinutes(parseInt(e.target.value) || 120)}
                       min="25"
                       step="25"
-                      className="border-gray-300"
+                      className="rounded-xl"
+                      style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                     />
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs opacity-60 mt-1" style={{ color: 'var(--theme-text-primary)' }}>
                       This will be divided into {Math.ceil(totalMinutes / workDuration)} sessions
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>
                       Work Duration (minutes)
                     </label>
                     <Input
@@ -440,12 +438,13 @@ export default function PomodoroClient() {
                       }}
                       min="1"
                       max="60"
-                      className="border-gray-300"
+                      className="rounded-xl"
+                      style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-semibold mb-1" style={{ color: 'var(--theme-text-primary)' }}>
                       Break Duration (minutes)
                     </label>
                     <Input
@@ -458,13 +457,15 @@ export default function PomodoroClient() {
                       }}
                       min="1"
                       max="30"
-                      className="border-gray-300"
+                      className="rounded-xl"
+                      style={{ color: 'var(--theme-text-primary)', borderColor: 'var(--theme-border)' }}
                     />
                   </div>
 
                   <Button
                     onClick={() => setShowSettings(false)}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white"
+                    className="w-full font-bold text-white rounded-xl shadow-lg mt-4"
+                    style={{ background: 'linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-accent) 100%)' }}
                   >
                     Save Settings
                   </Button>

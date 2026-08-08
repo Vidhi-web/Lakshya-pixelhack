@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
 import { generateRoadmap } from '@/lib/ai/gemini';
 import { createServerClient } from '@/lib/supabase/server';
+import { GoogleGenerativeAI } from '@google/generative-ai';
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || '');
 
 export async function POST(request: Request) {
   try {
-    const { goalType, userInput } = await request.json();
-
-    if (!goalType) {
-      return NextResponse.json(
-        { error: 'Goal type is required' },
-        { status: 400 }
-      );
+    let body: any = {};
+    try {
+      body = await request.json();
+    } catch {
+      // Empty body is OK — we'll fetch goalType from DB
     }
+
+    let goalType = body.goalType;
+    const userInput = body.userInput;
 
     // Initialize Supabase client
     const supabase = await createServerClient();
@@ -29,15 +33,58 @@ export async function POST(request: Request) {
       );
     }
 
+    // If goalType not provided in body, fetch from user's active goal
+    if (!goalType) {
+      const { data: activeGoal } = await supabase
+        .from('goals')
+        .select('type')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .limit(1)
+        .maybeSingle();
+
+      if (activeGoal?.type) {
+        goalType = activeGoal.type;
+      } else {
+        return NextResponse.json(
+          { error: 'No active goal found. Please select a goal first.' },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Server-Side Safety Validation: Check if goalType and userInput match semantically
+    if (userInput && userInput.trim() && process.env.GEMINI_API_KEY && process.env.GEMINI_API_KEY.length > 20) {
+      const validationPrompt = `Goal category: ${goalType}\nTarget input: "${userInput}"\nDoes the target input make sense for this goal category? Reply with strict JSON only:\n{"valid": true, "reason": ""} OR {"valid": false, "reason": "one short sentence explanation"}`;
+      
+      try {
+        const model = genAI.getGenerativeModel({ model: 'gemini-3.5-flash-lite' });
+        const valResult = await model.generateContent(validationPrompt);
+        const rawText = valResult.response.text().trim();
+        const cleanedText = rawText.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/\s*```$/i, '').trim();
+        const parsedVal = JSON.parse(cleanedText);
+        if (parsedVal.valid === false) {
+          return NextResponse.json(
+            { 
+              error: `Target "${userInput}" does not match goal category ${goalType.toUpperCase()}`,
+              reason: parsedVal.reason || 'Mismatched target input'
+            },
+            { status: 400 }
+          );
+        }
+      } catch (valErr) {
+        console.warn('Server-side goal validation warning:', valErr);
+      }
+    }
+
     // Ensure user profile exists
     const { data: userProfile, error: profileCheckError } = await supabase
       .from('users')
       .select('id')
       .eq('id', user.id)
-      .single();
+      .maybeSingle();
 
     if (profileCheckError || !userProfile) {
-      // Create user profile if it doesn't exist
       const { error: createProfileError } = await supabase
         .from('users')
         .insert({
@@ -74,9 +121,9 @@ export async function POST(request: Request) {
         },
       })
       .select()
-      .single();
+      .maybeSingle();
 
-    if (goalError) {
+    if (goalError || !goal) {
       console.error('Error saving goal:', goalError);
       return NextResponse.json(
         { error: 'Failed to save goal' },

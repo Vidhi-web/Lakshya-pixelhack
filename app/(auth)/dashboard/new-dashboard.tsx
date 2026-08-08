@@ -2,13 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import { 
   Target, TrendingUp, CheckCircle2, Clock, Calendar, 
-  Sparkles, Circle, Zap, Trophy, AlertTriangle, Lightbulb
+  Sparkles, Circle, Zap, Trophy, AlertTriangle, Lightbulb,
+  Map, CalendarDays, BarChart3, Timer, StickyNote, Flame, Star, Award, 
+  ArrowRight, Activity, ShieldCheck, ChevronRight, Play, Menu, User, Home, BookOpen, Layers
 } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { Button } from '@/components/ui/button';
+import toast, { Toaster } from 'react-hot-toast';
 
 interface DashboardProps {
   activeGoal: any;
@@ -23,7 +26,6 @@ export default function NewDashboard({ activeGoal, milestones, tasks, stats }: D
   const [aiRecommendations, setAiRecommendations] = useState<any>(null);
   const [loadingRecommendations, setLoadingRecommendations] = useState(false);
 
-  // Fetch AI recommendations on mount
   useEffect(() => {
     fetchRecommendations();
   }, []);
@@ -43,22 +45,9 @@ export default function NewDashboard({ activeGoal, milestones, tasks, stats }: D
     }
   };
 
-  const upcomingTasks = localTasks
-    .filter((t: any) => t.status !== 'completed')
-    .slice(0, 6);
-
-  // Get upcoming deadlines (tasks with due dates in next 7 days)
-  const now = new Date();
-  const sevenDaysLater = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-  
-  const upcomingDeadlines = localTasks
-    .filter((t: any) => {
-      if (t.status === 'completed' || !t.due_date) return false;
-      const dueDate = new Date(t.due_date);
-      return dueDate >= now && dueDate <= sevenDaysLater;
-    })
-    .sort((a: any, b: any) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime())
-    .slice(0, 5);
+  const pendingTasks = localTasks.filter((t: any) => t.status !== 'completed');
+  const completedTasks = localTasks.filter((t: any) => t.status === 'completed');
+  const todayTasks = pendingTasks.slice(0, 3);
 
   const handleToggleTask = async (taskId: string) => {
     const task = localTasks.find((t: any) => t.id === taskId);
@@ -76,6 +65,11 @@ export default function NewDashboard({ activeGoal, milestones, tasks, stats }: D
         setLocalTasks(localTasks.map((t: any) => 
           t.id === taskId ? { ...t, status: newStatus } : t
         ));
+        if (newStatus === 'completed') {
+          toast.success('🎉 Quest Completed! +25 XP ⭐', { id: `task-${taskId}` });
+        } else {
+          toast.success('Quest reopened', { id: `task-${taskId}` });
+        }
         router.refresh();
       }
     } catch (err) {
@@ -83,390 +77,373 @@ export default function NewDashboard({ activeGoal, milestones, tasks, stats }: D
     }
   };
 
+  const totalTasks = localTasks.length;
+  const completedCount = completedTasks.length;
+  const xp = completedCount * 25;
+  const level = Math.floor(xp / 100) + 1;
+  const streak = completedCount > 0 ? Math.min(completedCount, 7) : 0;
+  const progressPercent = activeGoal?.progress || 0;
+
+  const getPriorityBadge = (priority: string) => {
+    switch (priority) {
+      case 'urgent': return { label: 'URGENT', bg: 'rgba(244, 114, 182, 0.25)', text: '#e11d48' };
+      case 'high': return { label: 'HIGH PRIORITY', bg: 'rgba(251, 146, 60, 0.25)', text: '#ea580c' };
+      case 'medium': return { label: 'MEDIUM', bg: 'rgba(250, 204, 21, 0.25)', text: '#ca8a04' };
+      default: return { label: 'NORMAL', bg: 'rgba(52, 211, 153, 0.25)', text: '#059669' };
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* Hero Header */}
-        <Card className="mb-8 bg-white border border-gray-200 shadow-sm">
-          <CardContent className="p-8">
-            <div className="flex items-start justify-between flex-wrap gap-6">
-              <div className="flex-1">
-                <div className="flex items-center gap-3 mb-4">
-                  <div className="w-14 h-14 rounded-lg bg-blue-600 flex items-center justify-center">
-                    <Target className="w-8 h-8 text-white" />
-                  </div>
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900">
-                      {activeGoal.title}
-                    </h1>
-                    <p className="text-sm text-gray-600 mt-1">{activeGoal.description}</p>
-                  </div>
-                </div>
-                
-                <div className="mt-6">
-                  <div className="flex justify-between mb-2">
-                    <span className="text-sm font-medium text-gray-700">Progress</span>
-                    <span className="text-xl font-bold text-blue-600">{activeGoal.progress}%</span>
-                  </div>
-                  <div className="h-3 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                      className="h-full bg-blue-600 transition-all"
-                      style={{ width: `${activeGoal.progress}%` }}
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              {stats.daysRemaining && (
-                <div className="px-6 py-4 rounded-lg bg-gray-50 border border-gray-200">
-                  <Trophy className="w-8 h-8 text-gray-700 mx-auto mb-2" />
-                  <div className="text-3xl font-bold text-gray-900 text-center">
-                    {stats.daysRemaining}
-                  </div>
-                  <div className="text-xs text-gray-600 text-center">days remaining</div>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Stats Grid - Premium Design */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Completed Card */}
-          <Card className="relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-xl transition group">
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10" />
-            <CardContent className="relative p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-md group-hover:scale-110 transition">
-                  <CheckCircle2 className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-emerald-600 uppercase tracking-wider">Completed</span>
-              </div>
-              <div className="text-4xl font-bold text-gray-900 mb-1">{stats.completedTasks}</div>
-              <p className="text-sm text-gray-600">Tasks finished</p>
-            </CardContent>
-          </Card>
-
-          {/* In Progress Card */}
-          <Card className="relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-xl transition group">
-            <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-indigo-500/10" />
-            <CardContent className="relative p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center shadow-md group-hover:scale-110 transition">
-                  <Clock className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-blue-600 uppercase tracking-wider">In Progress</span>
-              </div>
-              <div className="text-4xl font-bold text-gray-900 mb-1">{stats.inProgressTasks}</div>
-              <p className="text-sm text-gray-600">Active tasks</p>
-            </CardContent>
-          </Card>
-
-          {/* Milestones Card */}
-          <Card className="relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-xl transition group">
-            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-pink-500/10" />
-            <CardContent className="relative p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center shadow-md group-hover:scale-110 transition">
-                  <Target className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-purple-600 uppercase tracking-wider">Milestones</span>
-              </div>
-              <div className="text-4xl font-bold text-gray-900 mb-1">{stats.completedMilestones}/{stats.totalMilestones}</div>
-              <p className="text-sm text-gray-600">Goals reached</p>
-            </CardContent>
-          </Card>
-
-          {/* Pending Card */}
-          <Card className="relative overflow-hidden bg-white border-0 shadow-lg hover:shadow-xl transition group">
-            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-red-500/10" />
-            <CardContent className="relative p-6">
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-orange-500 to-red-600 flex items-center justify-center shadow-md group-hover:scale-110 transition">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                <span className="text-xs font-semibold text-orange-600 uppercase tracking-wider">Pending</span>
-              </div>
-              <div className="text-4xl font-bold text-gray-900 mb-1">{stats.todoTasks}</div>
-              <p className="text-sm text-gray-600">To be done</p>
-            </CardContent>
-          </Card>
+    <div className="min-h-screen pb-24 md:pb-12 pt-2 px-3 sm:px-6 max-w-5xl mx-auto space-y-4" style={{ background: 'var(--theme-background)', color: 'var(--theme-text-primary)' }}>
+      <Toaster position="top-right" />
+      
+      {/* MOBILE TOP HEADER (Matches image logo & hamburger menu) */}
+      <div className="flex md:hidden items-center justify-between py-2 px-1 mb-2">
+        <div className="flex items-center gap-2">
+          <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center">
+            <Target className="w-5 h-5 text-amber-500" />
+          </div>
+          <span className="text-xl font-extrabold tracking-tight text-amber-500">Lakshya</span>
         </div>
+        <button className="p-2 rounded-xl glass-card border border-white/10 opacity-80">
+          <Menu className="w-5 h-5" />
+        </button>
+      </div>
 
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-12 gap-6">
-          {/* Milestones */}
-          <Card className="col-span-12 lg:col-span-7 bg-white/70 backdrop-blur-xl shadow-xl">
-            <CardContent className="p-6">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                <Target className="w-5 h-5 text-emerald-600" />
-                Milestones
-              </h2>
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {milestones.map((m: any, i: number) => (
-                  <div key={m.id} className="p-4 rounded-xl bg-gradient-to-r from-gray-50 to-gray-100 border hover:shadow-lg transition">
-                    <div className="flex gap-4">
-                      <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow ${
-                        m.status === 'completed' ? 'bg-gradient-to-br from-green-400 to-emerald-500' :
-                        m.status === 'in_progress' ? 'bg-gradient-to-br from-blue-400 to-indigo-500' :
-                        'bg-gradient-to-br from-gray-300 to-gray-400'
-                      } text-white`}>
-                        {m.status === 'completed' ? <CheckCircle2 className="w-5 h-5" /> : i + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-semibold mb-1">{m.title}</h3>
-                        <p className="text-sm text-gray-600 mb-2">{m.description}</p>
-                        <div className="flex gap-3 text-xs text-gray-500">
-                          <span>{m.target_date ? new Date(m.target_date).toLocaleDateString('en-US') : 'No date'}</span>
-                          <span className="px-2 py-0.5 rounded-full bg-gray-200">
-                            {m.status.replace('_', ' ')}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+      {/* CARD 1: TOP HERO BANNER (MY GOAL with mountain vector & floating streak card) */}
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+        className="p-5 md:p-7 rounded-3xl relative overflow-hidden border shadow-lg"
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(6, 182, 212, 0.08) 50%, rgba(15, 23, 42, 0.8) 100%)', 
+          borderColor: 'rgba(16, 185, 129, 0.3)' 
+        }}
+      >
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 relative z-10">
+          <div className="space-y-2 max-w-xl">
+            <span className="text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 inline-block">
+              MY GOAL
+            </span>
+            <h2 className="text-xl md:text-2xl font-black leading-snug" style={{ color: 'var(--theme-text-primary)' }}>
+              {activeGoal?.title || 'Transitioning from Corporate Finance to Civil Services'}
+            </h2>
+            <p className="text-xs opacity-75 leading-relaxed max-w-md" style={{ color: 'var(--theme-text-primary)' }}>
+              {activeGoal?.description || 'Every focused step today is a step closer to the life I envision. Stay consistent, stay disciplined, and success will follow.'}
+            </p>
+
+            <div className="pt-2 max-w-sm">
+              <div className="flex justify-between text-xs font-extrabold mb-1">
+                <span className="opacity-70">Overall Roadmap Progress</span>
+                <span className="text-emerald-400 font-black">{progressPercent}%</span>
               </div>
-            </CardContent>
-          </Card>
-
-          {/* Quick Actions - Ultra Premium Sidebar */}
-          <div className="col-span-12 lg:col-span-5 space-y-6">
-            {/* AI Recommendations Widget */}
-            <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950 dark:to-purple-950 border-2 border-indigo-200 dark:border-indigo-800 shadow-lg">
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                    <Lightbulb className="w-5 h-5 text-indigo-600" />
-                    AI Recommendations
-                  </h3>
-                  <button
-                    onClick={fetchRecommendations}
-                    disabled={loadingRecommendations}
-                    className="text-xs px-3 py-1 rounded-full bg-indigo-600 text-white hover:bg-indigo-700 transition disabled:opacity-50"
-                  >
-                    {loadingRecommendations ? 'Loading...' : 'Refresh'}
-                  </button>
-                </div>
-
-                {loadingRecommendations ? (
-                  <div className="space-y-3">
-                    <div className="h-16 bg-white/50 rounded-lg animate-pulse" />
-                    <div className="h-16 bg-white/50 rounded-lg animate-pulse" />
-                    <div className="h-16 bg-white/50 rounded-lg animate-pulse" />
-                  </div>
-                ) : aiRecommendations?.recommendations?.length > 0 ? (
-                  <>
-                    {aiRecommendations.summary && (
-                      <div className="mb-4 p-3 rounded-lg bg-white/70 dark:bg-gray-800/70 border border-indigo-200 dark:border-indigo-800">
-                        <p className="text-sm font-semibold text-indigo-900 dark:text-indigo-100">
-                          {aiRecommendations.summary}
-                        </p>
-                        {aiRecommendations.freeHours && (
-                          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
-                            Free time today: ~{aiRecommendations.freeHours} hours
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    <div className="space-y-3">
-                      {aiRecommendations.recommendations.map((rec: any, i: number) => (
-                        <div
-                          key={i}
-                          className={`p-4 rounded-lg border-l-4 bg-white/80 dark:bg-gray-800/80 shadow-sm ${
-                            rec.priority === 'high' ? 'border-l-red-500' :
-                            rec.priority === 'low' ? 'border-l-green-500' :
-                            'border-l-blue-500'
-                          }`}
-                        >
-                          <p className="text-sm text-gray-800 dark:text-gray-200 leading-relaxed">
-                            {rec.text}
-                          </p>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                ) : (
-                  <p className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm">
-                    No recommendations available yet
-                  </p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Upcoming Deadlines Widget */}
-            <Card className="bg-white border border-gray-200 shadow-lg">
-              <CardContent className="p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                  <AlertTriangle className="w-5 h-5 text-orange-600" />
-                  Upcoming Deadlines
-                </h3>
-                {upcomingDeadlines.length > 0 ? (
-                  <div className="space-y-3">
-                    {upcomingDeadlines.map((task: any) => {
-                      const dueDate = new Date(task.due_date);
-                      const daysUntil = Math.ceil((dueDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                      
-                      return (
-                        <div key={task.id} className="p-3 rounded-lg bg-orange-50 border border-orange-200 hover:shadow-md transition">
-                          <div className="flex items-start justify-between gap-2">
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-sm text-gray-900 truncate">{task.title}</p>
-                              <p className="text-xs text-gray-600 mt-1">
-                                {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                              </p>
-                            </div>
-                            <span className={`text-xs px-2 py-1 rounded-full font-semibold whitespace-nowrap ${
-                              daysUntil === 0 ? 'bg-red-100 text-red-700' :
-                              daysUntil <= 2 ? 'bg-orange-100 text-orange-700' :
-                              'bg-yellow-100 text-yellow-700'
-                            }`}>
-                              {daysUntil === 0 ? 'Today!' : daysUntil === 1 ? 'Tomorrow' : `${daysUntil} days`}
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                ) : (
-                  <p className="text-center text-gray-500 py-6 text-sm">No upcoming deadlines</p>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Tasks Card */}
-            <Link href="/tasks">
-              <Card className="relative overflow-hidden bg-gradient-to-br from-emerald-400 via-emerald-500 to-teal-600 text-white border-0 shadow-2xl hover:shadow-emerald-500/50 hover:scale-[1.03] transition-all duration-300 cursor-pointer group">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-white/20 transition-all" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-teal-400/20 rounded-full blur-2xl -ml-16 -mb-16" />
-                
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/5" />
-                
-                <CardContent className="relative p-8">
-                  {/* Icon Badge */}
-                  <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                    <CheckCircle2 className="w-8 h-8 text-white drop-shadow-md" strokeWidth={2.5} />
-                  </div>
-                  
-                  {/* Content */}
-                  <h3 className="text-2xl font-bold mb-2 drop-shadow-sm">Tasks</h3>
-                  <p className="text-white/90 text-sm font-medium">Manage tasks</p>
-                  
-                  {/* Arrow Indicator */}
-                  <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            {/* Calendar Card */}
-            <Link href="/calendar">
-              <Card className="relative overflow-hidden bg-gradient-to-br from-blue-400 via-blue-500 to-indigo-600 text-white border-0 shadow-2xl hover:shadow-blue-500/50 hover:scale-[1.03] transition-all duration-300 cursor-pointer group">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-white/20 transition-all" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-indigo-400/20 rounded-full blur-2xl -ml-16 -mb-16" />
-                
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/5" />
-                
-                <CardContent className="relative p-8">
-                  {/* Icon Badge */}
-                  <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                    <Calendar className="w-8 h-8 text-white drop-shadow-md" strokeWidth={2.5} />
-                  </div>
-                  
-                  {/* Content */}
-                  <h3 className="text-2xl font-bold mb-2 drop-shadow-sm">Calendar</h3>
-                  <p className="text-white/90 text-sm font-medium">Schedule</p>
-                  
-                  {/* Arrow Indicator */}
-                  <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
-
-            {/* Pomodoro Card */}
-            <Link href="/pomodoro">
-              <Card className="relative overflow-hidden bg-gradient-to-br from-purple-400 via-purple-500 to-pink-600 text-white border-0 shadow-2xl hover:shadow-purple-500/50 hover:scale-[1.03] transition-all duration-300 cursor-pointer group">
-                {/* Decorative Elements */}
-                <div className="absolute top-0 right-0 w-40 h-40 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 group-hover:bg-white/20 transition-all" />
-                <div className="absolute bottom-0 left-0 w-32 h-32 bg-pink-400/20 rounded-full blur-2xl -ml-16 -mb-16" />
-                
-                {/* Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/5" />
-                
-                <CardContent className="relative p-8">
-                  {/* Icon Badge */}
-                  <div className="w-16 h-16 rounded-2xl bg-white/25 backdrop-blur-md flex items-center justify-center mb-5 shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
-                    <Clock className="w-8 h-8 text-white drop-shadow-md" strokeWidth={2.5} />
-                  </div>
-                  
-                  {/* Content */}
-                  <h3 className="text-2xl font-bold mb-2 drop-shadow-sm">Pomodoro</h3>
-                  <p className="text-white/90 text-sm font-medium">Focus time</p>
-                  
-                  {/* Arrow Indicator */}
-                  <div className="absolute bottom-6 right-6 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center group-hover:translate-x-1 transition-transform">
-                    <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </div>
-                </CardContent>
-              </Card>
-            </Link>
+              <div className="h-2 w-full bg-black/30 rounded-full overflow-hidden border border-emerald-500/20">
+                <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${Math.max(5, progressPercent)}%` }} />
+              </div>
+            </div>
           </div>
 
-          {/* Tasks */}
-          <Card className="col-span-12 bg-white/70 backdrop-blur-xl shadow-xl">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold flex items-center gap-2">
-                  <Zap className="w-5 h-5 text-orange-600" />
-                  Focus Now
-                </h2>
-                <Link href="/tasks">
-                  <Button variant="ghost" size="sm">View All →</Button>
-                </Link>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {upcomingTasks.map((task: any) => (
-                  <div key={task.id} className="p-4 rounded-xl bg-gray-50 border hover:shadow-lg transition">
-                    <div className="flex gap-3">
-                      <button onClick={() => handleToggleTask(task.id)}>
-                        {task.status === 'completed' ? 
-                          <CheckCircle2 className="w-6 h-6 text-emerald-600" /> :
-                          <Circle className="w-6 h-6 text-gray-400 hover:text-emerald-600" />
-                        }
-                      </button>
-                      <div className="flex-1">
-                        <h4 className="font-semibold text-sm mb-1">{task.title}</h4>
-                        <p className="text-xs text-gray-600 line-clamp-2 mb-2">{task.description}</p>
-                        <span className={`text-xs px-2 py-1 rounded-full ${
-                          task.priority === 'urgent' ? 'bg-red-100 text-red-700' :
-                          task.priority === 'high' ? 'bg-orange-100 text-orange-700' :
-                          task.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-green-100 text-green-700'
-                        }`}>
-                          {task.priority}
-                        </span>
-                      </div>
-                    </div>
+          {/* Floating Streak Card (Matches exact image overlay card) */}
+          <div className="shrink-0 p-4 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 shadow-xl flex flex-col items-center justify-center text-center w-full md:w-36">
+            <div className="flex items-center gap-1 text-[11px] font-extrabold text-amber-400 mb-1">
+              <Flame className="w-4 h-4 text-orange-500 fill-orange-500" />
+              <span>Current Streak</span>
+            </div>
+            <span className="text-3xl font-black my-0.5" style={{ color: 'var(--theme-text-primary)' }}>
+              {streak > 0 ? streak : 7}
+            </span>
+            <span className="text-[11px] font-bold opacity-80" style={{ color: 'var(--theme-text-primary)' }}>Days</span>
+            <span className="text-[10px] font-black text-amber-400 mt-1 flex items-center gap-0.5">
+              Keep it going! 🔥
+            </span>
+          </div>
+        </div>
+
+        {/* Background Hiker Mountain Vector Illustration */}
+        <div className="absolute right-0 bottom-0 opacity-25 pointer-events-none hidden sm:block">
+          <svg width="280" height="160" viewBox="0 0 280 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M0 160L90 70L160 120L280 10V160H0Z" fill="url(#mountainGrad)" />
+            <circle cx="210" cy="40" r="16" fill="#fbbf24" fillOpacity="0.6" />
+            <defs>
+              <linearGradient id="mountainGrad" x1="140" y1="10" x2="140" y2="160" gradientUnits="userSpaceOnUse">
+                <stop stopColor="#10b981" stopOpacity="0.8" />
+                <stop offset="1" stopColor="#0f172a" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+      </motion.div>
+
+      {/* ROW OF 3 MODULAR PASTEL STAT CARDS (Target Window, XP Score, Focus Streak) */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3.5">
+        
+        {/* CARD 1: TARGET WINDOW (Soft Warm Yellow/Amber) */}
+        <div className="p-4 rounded-3xl relative overflow-hidden border shadow-sm flex flex-col justify-between min-h-[145px]"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.18) 0%, rgba(245, 158, 11, 0.08) 100%)', 
+            borderColor: 'rgba(245, 158, 11, 0.3)' 
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30">
+              TARGET WINDOW
+            </span>
+            <div className="w-7 h-7 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center">
+              <Clock className="w-3.5 h-3.5 text-amber-500" />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-extrabold text-sm mb-1" style={{ color: 'var(--theme-text-primary)' }}>Exam / Milestone</h4>
+            <div className="text-3xl font-black flex items-baseline gap-1" style={{ color: 'var(--theme-text-primary)' }}>
+              {stats?.daysRemaining !== null && stats?.daysRemaining !== undefined ? stats.daysRemaining : 0}
+              <span className="text-xs font-bold opacity-70">Days Left</span>
+            </div>
+          </div>
+
+          {/* 3D Calendar Graphic */}
+          <div className="absolute right-2 bottom-2 w-14 h-14 opacity-40 pointer-events-none flex items-center justify-center">
+            <Calendar className="w-10 h-10 text-amber-500" />
+          </div>
+        </div>
+
+        {/* CARD 2: XP SCORE (Soft Lavender / Purple) */}
+        <div className="p-4 rounded-3xl relative overflow-hidden border shadow-sm flex flex-col justify-between min-h-[145px]"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.18) 0%, rgba(129, 140, 248, 0.08) 100%)', 
+            borderColor: 'rgba(168, 85, 247, 0.3)' 
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-purple-500/20 text-purple-400 border border-purple-500/30">
+              XP SCORE
+            </span>
+            <div className="w-7 h-7 rounded-full bg-purple-500/20 border border-purple-500/30 flex items-center justify-center">
+              <Zap className="w-3.5 h-3.5 text-purple-400" />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-extrabold text-sm mb-0.5" style={{ color: 'var(--theme-text-primary)' }}>Level {level} Competency</h4>
+            <div className="text-3xl font-black flex items-baseline gap-1" style={{ color: 'var(--theme-text-primary)' }}>
+              {xp}
+              <span className="text-xs font-bold opacity-70">XP</span>
+            </div>
+            <p className="text-[10px] font-bold opacity-60 mt-0.5" style={{ color: 'var(--theme-text-primary)' }}>
+              Tasks Completed: {completedCount}
+            </p>
+          </div>
+
+          {/* 3D Bar Chart Graphic */}
+          <div className="absolute right-2 bottom-2 w-14 h-14 opacity-40 pointer-events-none flex items-center justify-center">
+            <BarChart3 className="w-10 h-10 text-purple-400" />
+          </div>
+        </div>
+
+        {/* CARD 3: FOCUS STREAK (Soft Mint / Emerald) */}
+        <div className="p-4 rounded-3xl relative overflow-hidden border shadow-sm flex flex-col justify-between min-h-[145px]"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(52, 211, 153, 0.18) 0%, rgba(16, 185, 129, 0.08) 100%)', 
+            borderColor: 'rgba(52, 211, 153, 0.3)' 
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <span className="text-[9px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              FOCUS STREAK
+            </span>
+            <div className="w-7 h-7 rounded-full bg-emerald-500/20 border border-emerald-500/30 flex items-center justify-center">
+              <Flame className="w-3.5 h-3.5 text-emerald-400" />
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-extrabold text-sm mb-0.5" style={{ color: 'var(--theme-text-primary)' }}>Maintain Momentum</h4>
+            <div className="text-3xl font-black flex items-baseline gap-1" style={{ color: 'var(--theme-text-primary)' }}>
+              {streak}
+              <span className="text-xs font-bold opacity-70">Days</span>
+            </div>
+            <p className="text-[10px] font-bold opacity-60 mt-0.5" style={{ color: 'var(--theme-text-primary)' }}>
+              Active Consistency
+            </p>
+          </div>
+
+          {/* 3D Plant Graphic */}
+          <div className="absolute right-2 bottom-2 w-14 h-14 opacity-40 pointer-events-none flex items-center justify-center">
+            <TrendingUp className="w-10 h-10 text-emerald-400" />
+          </div>
+        </div>
+
+      </div>
+
+      {/* CARD 3: FOCUS SESSION BANNER (Soft Pink/Coral Gradient with 25:00 timer clock graphic) */}
+      <motion.div 
+        initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }}
+        className="p-5 md:p-6 rounded-3xl relative overflow-hidden border shadow-lg flex flex-col md:flex-row items-center justify-between gap-5"
+        style={{ 
+          background: 'linear-gradient(135deg, rgba(244, 114, 182, 0.18) 0%, rgba(236, 72, 153, 0.08) 60%, rgba(15, 23, 42, 0.6) 100%)', 
+          borderColor: 'rgba(244, 114, 182, 0.3)' 
+        }}
+      >
+        <div className="space-y-2.5 max-w-lg text-center md:text-left z-10">
+          <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1 rounded-full bg-pink-500/20 text-pink-400 border border-pink-500/30 inline-block">
+            FOCUS MODE
+          </span>
+          <h3 className="text-xl md:text-2xl font-black leading-tight" style={{ color: 'var(--theme-text-primary)' }}>
+            Start a 25-Minute Focus Session
+          </h3>
+          <p className="text-xs opacity-75 leading-relaxed" style={{ color: 'var(--theme-text-primary)' }}>
+            Calibrate your focus patterns with Saathi AI recommendations to boost retention and finish today's high-priority quests effortlessly.
+          </p>
+
+          <div className="pt-1">
+            <Link href="/pomodoro">
+              <Button 
+                size="lg"
+                className="rounded-full px-7 font-extrabold text-white shadow-lg transition-transform hover:scale-105"
+                style={{ background: 'linear-gradient(135deg, #15803d 0%, #047857 100%)' }}
+              >
+                <Play className="w-4 h-4 mr-2 fill-white" />
+                Launch Focus Timer
+              </Button>
+            </Link>
+          </div>
+        </div>
+
+        {/* Right 3D Alarm Clock Illustration showing 25:00 */}
+        <div className="shrink-0 relative z-10 flex items-center justify-center">
+          <div className="w-32 h-32 rounded-full border-4 border-rose-500/50 bg-rose-950/40 backdrop-blur-md shadow-2xl flex flex-col items-center justify-center text-center">
+            <div className="w-2 h-2 rounded-full bg-rose-400 animate-ping mb-1" />
+            <span className="text-2xl font-black text-rose-300 tracking-wider">25:00</span>
+            <span className="text-[9px] font-bold opacity-60 text-rose-200">POMODORO</span>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* CARD 4: SAATHI AI BANNER (Soft Gold / Cream Gradient) */}
+      <div 
+        onClick={() => window.dispatchEvent(new Event('open-saathi-chat'))}
+        className="block cursor-pointer"
+      >
+        <motion.div 
+          whileHover={{ scale: 1.01 }}
+          whileTap={{ scale: 0.98 }}
+          className="p-4 rounded-2xl border shadow-sm flex items-center justify-between transition-all"
+          style={{ 
+            background: 'linear-gradient(135deg, rgba(251, 191, 36, 0.15) 0%, rgba(245, 158, 11, 0.05) 100%)', 
+            borderColor: 'rgba(245, 158, 11, 0.3)' 
+          }}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-amber-400">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h4 className="font-extrabold text-sm flex items-center gap-2" style={{ color: 'var(--theme-text-primary)' }}>
+                Saathi AI
+              </h4>
+              <p className="text-[11px] font-bold text-amber-400">Active Sync</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-amber-500/20 border border-amber-500/30 flex items-center justify-center text-xl">
+              🤖
+            </div>
+            <ChevronRight className="w-5 h-5 opacity-60" style={{ color: 'var(--theme-text-primary)' }} />
+          </div>
+        </motion.div>
+      </div>
+
+      {/* SECTION 5: TODAY'S HIGH PRIORITY QUESTS */}
+      <div className="space-y-3 pt-2">
+        <div className="flex items-center justify-between">
+          <h3 className="text-base font-black flex items-center gap-2" style={{ color: 'var(--theme-text-primary)' }}>
+            <ShieldCheck className="w-5 h-5 text-amber-500" />
+            Today's High Priority Quests
+          </h3>
+          <Link href="/tasks" className="text-xs font-bold opacity-70 hover:opacity-100 flex items-center gap-1" style={{ color: 'var(--theme-text-primary)' }}>
+            View All <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        <div className="space-y-2.5">
+          {todayTasks.length > 0 ? todayTasks.map((task: any, i: number) => {
+            const badge = getPriorityBadge(task.priority);
+            const isCompleted = task.status === 'completed';
+            return (
+              <motion.div 
+                key={task.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
+                className="p-3.5 rounded-2xl flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 cursor-pointer border shadow-sm transition-all hover:scale-[1.005]"
+                style={{ 
+                  borderColor: 'var(--theme-border)', 
+                  background: i === 0 
+                    ? 'linear-gradient(90deg, rgba(244, 114, 182, 0.12) 0%, rgba(236, 72, 153, 0.04) 100%)'
+                    : i === 1 
+                      ? 'linear-gradient(90deg, rgba(96, 165, 250, 0.12) 0%, rgba(59, 130, 246, 0.04) 100%)'
+                      : 'linear-gradient(90deg, rgba(52, 211, 153, 0.12) 0%, rgba(16, 185, 129, 0.04) 100%)'
+                }}
+                onClick={() => handleToggleTask(task.id)}
+              >
+                <div className="flex items-center gap-3 min-w-0 flex-1">
+                  <button className="shrink-0">
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+                    ) : (
+                      <Circle className="w-5 h-5 opacity-40 hover:opacity-100" style={{ color: 'var(--theme-text-primary)' }} />
+                    )}
+                  </button>
+
+                  <h4 className={`text-xs sm:text-sm font-bold truncate ${isCompleted ? 'line-through opacity-50' : ''}`} style={{ color: 'var(--theme-text-primary)' }}>
+                    {task.title}
+                  </h4>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[9px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider" style={{ background: badge.bg, color: badge.text }}>
+                    {badge.label}
+                  </span>
+
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400">
+                    <Star className="w-3 h-3 fill-amber-400" /> +25 XP
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
+                  <div className="flex items-center gap-1 text-[11px] font-bold text-amber-400">
+                    <Star className="w-3 h-3 fill-amber-400" /> +25 XP
+                  </div>
+                </div>
+              </motion.div>
+            );
+          }) : (
+            <div className="p-6 rounded-2xl text-center glass-card border opacity-60 text-xs font-bold" style={{ borderColor: 'var(--theme-border)', background: 'var(--theme-background-alt)' }}>
+              <CheckCircle2 className="w-6 h-6 mx-auto mb-1 text-emerald-400" />
+              All quests completed for today!
+            </div>
+          )}
         </div>
       </div>
+
+      {/* MOBILE FIXED BOTTOM NAVIGATION BAR (Matches image exact bottom navigation) */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-slate-950/90 backdrop-blur-xl border-t border-white/10 px-4 py-2 flex items-center justify-around">
+        <Link href="/dashboard" className="flex flex-col items-center gap-1 text-amber-400">
+          <Home className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Home</span>
+        </Link>
+        <Link href="/roadmap" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 text-white">
+          <Map className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Roadmap</span>
+        </Link>
+        <Link href="/tasks" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 text-white">
+          <CalendarDays className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Tasks</span>
+        </Link>
+        <Link href="/pomodoro" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 text-white">
+          <Timer className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Focus</span>
+        </Link>
+        <Link href="/personalize" className="flex flex-col items-center gap-1 opacity-60 hover:opacity-100 text-white">
+          <User className="w-5 h-5" />
+          <span className="text-[10px] font-bold">Profile</span>
+        </Link>
+      </div>
+
     </div>
   );
 }
