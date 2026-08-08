@@ -11,7 +11,7 @@ export async function POST(request: Request) {
     try {
       body = await request.json();
     } catch {
-      // Empty body is OK — we'll fetch goalType from DB
+      // Empty body is OK
     }
 
     let goalType = body.goalType;
@@ -28,28 +28,46 @@ export async function POST(request: Request) {
 
     if (authError || !user) {
       return NextResponse.json(
-        { error: 'Unauthorized' },
+        { error: 'Please log in to generate your AI roadmap.' },
         { status: 401 }
       );
     }
 
-    // If goalType not provided in body, fetch from user's active goal
+    // If goalType not provided in body, fetch active or latest goal from DB
     if (!goalType) {
       const { data: activeGoal } = await supabase
         .from('goals')
         .select('type')
         .eq('user_id', user.id)
         .eq('is_active', true)
+        .order('created_at', { ascending: false })
         .limit(1)
         .maybeSingle();
 
       if (activeGoal?.type) {
         goalType = activeGoal.type;
       } else {
-        return NextResponse.json(
-          { error: 'No active goal found. Please select a goal first.' },
-          { status: 400 }
-        );
+        // Fallback: check any goal for user
+        const { data: anyGoal } = await supabase
+          .from('goals')
+          .select('type')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (anyGoal?.type) {
+          goalType = anyGoal.type;
+        } else {
+          // Fallback: check personalization
+          const { data: personalization } = await supabase
+            .from('user_personalization')
+            .select('goal_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          goalType = personalization?.goal_id || 'placement';
+        }
       }
     }
 
@@ -78,32 +96,38 @@ export async function POST(request: Request) {
     }
 
     // Ensure user profile exists
-    const { data: userProfile, error: profileCheckError } = await supabase
-      .from('users')
-      .select('id')
-      .eq('id', user.id)
-      .maybeSingle();
-
-    if (profileCheckError || !userProfile) {
-      const { error: createProfileError } = await supabase
+    try {
+      const { data: userProfile } = await supabase
         .from('users')
-        .insert({
-          id: user.id,
-          email: user.email!,
-        });
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
 
-      if (createProfileError) {
-        console.error('Error creating user profile:', createProfileError);
-        return NextResponse.json(
-          { error: 'Failed to create user profile' },
-          { status: 500 }
-        );
+      if (!userProfile) {
+        await supabase
+          .from('users')
+          .insert({
+            id: user.id,
+            email: user.email || `${user.id}@example.com`,
+          });
       }
+    } catch (profileErr) {
+      console.warn('User profile check warning:', profileErr);
     }
 
-    // Generate roadmap using Gemini AI
-    console.log('Generating roadmap for:', goalType);
+    // Generate roadmap using Gemini AI (or fallback)
+    console.log('Generating roadmap for goalType:', goalType);
     const roadmap = await generateRoadmap(goalType, userInput);
+
+    // Deactivate old goals for this user
+    try {
+      await supabase
+        .from('goals')
+        .update({ is_active: false })
+        .eq('user_id', user.id);
+    } catch (e) {
+      console.warn('Deactivate old goals warning:', e);
+    }
 
     // Save goal to database
     const { data: goal, error: goalError } = await supabase
@@ -126,12 +150,12 @@ export async function POST(request: Request) {
     if (goalError || !goal) {
       console.error('Error saving goal:', goalError);
       return NextResponse.json(
-        { error: 'Failed to save goal' },
+        { error: 'Failed to save goal to database' },
         { status: 500 }
       );
     }
 
-    console.log('Goal saved:', goal.id);
+    console.log('Goal saved successfully:', goal.id);
 
     // Save milestones
     const milestonesData = roadmap.milestones.map((milestone) => ({
@@ -148,7 +172,7 @@ export async function POST(request: Request) {
       .insert(milestonesData)
       .select();
 
-    if (milestonesError) {
+    if (milestonesError || !milestones) {
       console.error('Error saving milestones:', milestonesError);
       return NextResponse.json(
         { error: 'Failed to save milestones' },
@@ -162,46 +186,47 @@ export async function POST(request: Request) {
     const tasksData: any[] = [];
     roadmap.milestones.forEach((milestone, milestoneIndex) => {
       const correspondingMilestone = milestones[milestoneIndex];
-      
-      milestone.tasks.forEach((task) => {
-        tasksData.push({
-          user_id: user.id,
-          goal_id: goal.id,
-          milestone_id: correspondingMilestone.id,
-          title: task.title,
-          description: task.description,
-          status: 'todo',
-          priority: task.priority,
-          estimated_hours: task.estimatedHours,
+      if (correspondingMilestone) {
+        milestone.tasks.forEach((task) => {
+          tasksData.push({
+            user_id: user.id,
+            goal_id: goal.id,
+            milestone_id: correspondingMilestone.id,
+            title: task.title,
+            description: task.description,
+            status: 'todo',
+            priority: task.priority,
+            estimated_hours: task.estimatedHours,
+          });
         });
-      });
+      }
     });
 
-    const { error: tasksError } = await supabase
-      .from('tasks')
-      .insert(tasksData);
+    if (tasksData.length > 0) {
+      const { error: tasksError } = await supabase
+        .from('tasks')
+        .insert(tasksData);
 
-    if (tasksError) {
-      console.error('Error saving tasks:', tasksError);
-      return NextResponse.json(
-        { error: 'Failed to save tasks' },
-        { status: 500 }
-      );
+      if (tasksError) {
+        console.warn('Error saving tasks warning:', tasksError.message);
+      }
     }
 
-    console.log('Tasks saved:', tasksData.length);
-
     // Log analytics event
-    await supabase.from('analytics_events').insert({
-      user_id: user.id,
-      goal_id: goal.id,
-      event_type: 'goal_created',
-      metadata: {
-        goalType,
-        milestonesCount: milestones.length,
-        tasksCount: tasksData.length,
-      },
-    });
+    try {
+      await supabase.from('analytics_events').insert({
+        user_id: user.id,
+        goal_id: goal.id,
+        event_type: 'goal_created',
+        metadata: {
+          goalType,
+          milestonesCount: milestones.length,
+          tasksCount: tasksData.length,
+        },
+      });
+    } catch (e) {
+      console.warn('Analytics event log warning:', e);
+    }
 
     return NextResponse.json({
       success: true,

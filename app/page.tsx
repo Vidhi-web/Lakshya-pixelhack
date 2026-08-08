@@ -150,8 +150,8 @@ export default function Home() {
                     return (
                       <motion.g key={node.id} initial={{ scale: 0, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.5 + i * 0.3, type: 'spring' }}>
                         {isActive && (
-                          <motion.circle cx={cx} cy={cy} r="28" fill="none" stroke="var(--theme-accent)" strokeWidth="2" opacity={0.4}
-                            animate={{ r: [24, 34, 24], opacity: [0.4, 0, 0.4] }} transition={{ duration: 2, repeat: Infinity }} />
+                          <motion.circle cx={cx} cy={cy} r={28} fill="none" stroke="var(--theme-accent)" strokeWidth="2"
+                            animate={{ scale: [1, 1.2, 1], opacity: [0.4, 0, 0.4] }} transition={{ duration: 2, repeat: Infinity }} />
                         )}
                         <circle cx={cx} cy={cy} r="20"
                           fill={isCompleted ? 'var(--theme-accent)' : isActive ? 'var(--theme-primary-alt)' : 'rgba(255,255,255,0.05)'}
