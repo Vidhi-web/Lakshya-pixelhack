@@ -1,201 +1,231 @@
-# 🎯 Lakshya
+# 🎯 Lakshya (लक्ष्य) — AI-Powered Personal Productivity & Learning Engine
 
-**Your Goal, Your Path, Your Success**
+> **Turn ambitious goals into clear, gamified daily execution with real-time AI guidance.**
 
-> AI-powered productivity platform designed for Indian students to achieve their academic and career goals with personalized roadmaps, smart task management, and AI-driven insights.
-
----
-
-## ✨ Features
-
-### 🤖 AI-Powered
-- **Roadmap Generation**: Gemini AI transforms goals into structured milestones and tasks
-- **Weekly Recommendations**: Personalized suggestions based on your activity patterns
-- **Intelligent Insights**: Data-driven productivity analytics
-
-### 🎯 Goal-Centric
-- **Adaptive Dashboard**: UI changes based on your selected goal (GATE, Placements, Startup, etc.)
-- **Goal Templates**: Pre-configured roadmaps for popular student goals
-- **Progress Tracking**: Real-time visualization of goal completion
-
-### 🛠️ All-in-One Productivity
-- **Task Management**: Smart task board with priorities, tags, and deadlines
-- **Timetable**: Integrated calendar with recurring events
-- **Notes**: Markdown-based note-taking linked to tasks and goals
-- **Pomodoro Timer**: Focus tracking with analytics integration
-- **Analytics Dashboard**: Productivity heatmaps, charts, and insights
-
-### 🎨 Modern UX
-- **Dark/Light Mode**: Fully themed interface
-- **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
-- **Smooth Animations**: Framer Motion transitions
-- **Premium UI**: Built with shadcn/ui and Tailwind CSS
+[![Next.js](https://img.shields.io/badge/Next.js-16.2.12-black?style=for-the-badge&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=for-the-badge&logo=typescript)](https://www.typescriptlang.org/)
+[![Supabase](https://img.shields.io/badge/Supabase-Database%20%26%20Auth-emerald?style=for-the-badge&logo=supabase)](https://supabase.com/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4.0-38bdf8?style=for-the-badge&logo=tailwind-css)](https://tailwindcss.com/)
+[![Google Gemini](https://img.shields.io/badge/Google_Gemini-3.5_Flash-8e44ad?style=for-the-badge&logo=googlegemini)](https://deepmind.google/technologies/gemini/)
 
 ---
 
-## 🏗️ Tech Stack
+## 📌 Project Overview
 
-### Frontend
-- **Framework**: Next.js 15 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS
-- **Components**: shadcn/ui (Radix UI)
-- **State**: Zustand
-- **Animations**: Framer Motion
-- **Charts**: Recharts
-- **Icons**: Lucide Icons
+**Lakshya** is an all-in-one productivity and study execution platform tailored for students, competitive exam aspirants (UPSC, GATE, NEET, JEE), and career-focused professionals (Campus Placements, Startups, DSA Mastery). 
 
-### Backend
-- **Runtime**: Next.js Server Actions & Route Handlers
-- **Database**: Supabase PostgreSQL
-- **Auth**: Supabase Authentication
-- **AI**: Google Gemini 2.5 Flash
-- **Storage**: Supabase Storage (future)
-
-### DevOps
-- **Hosting**: Vercel
-- **Database**: Supabase Cloud
-- **CI/CD**: Vercel Automatic Deployments
+Instead of static to-do lists, Lakshya creates an adaptive **AI Island Roadmap**, breaking down ambitious long-term goals into structured milestones and daily actionable quests. Powered by **Google Gemini AI** and **Supabase**, Lakshya incorporates gamification (XP, Level Badges, Streaks), adaptive timetable scheduling, a focus Pomodoro engine, rich-text note taking, and intelligent goal mismatch validation to prevent burnout and ensure steady progress.
 
 ---
 
-## 🚦 Getting Started
+## ✨ Core Features
 
-### Prerequisites
-- Node.js 18+ and npm
-- Supabase account
-- Google Gemini API key
+### 🏝️ 1. AI Island Roadmap (Gamified Learning Map)
+- **AI-Generated Milestones**: Dynamically generates 5–6 sequential phase islands tailored to your goal category (Placement, Startup, GATE, UPSC, DSA).
+- **Interactive Quests**: Breaks down each milestone into actionable, prioritized tasks with estimated study hours.
+- **Duolingo-Style Level Progression**: Levels unlock sequentially as previous milestone quests are completed.
+- **Boss Levels & XP Rewards**: Clearing island levels grants XP, levels up your profile, and unlocks achievement badges.
 
-### Installation
+### 🤖 2. Saathi AI Study Companion
+- **Real-Time AI Companion**: Powered by `gemini-3.5-flash-lite`, accessible via a floating assistant drawer across all pages.
+- **Grounded Account Context**: Answers questions based strictly on your real active goal, study streak, weak subjects, and daily pending tasks.
+- **Semantic Goal Mismatch Validation**: Automatically flags contradictory setup inputs (e.g. UPSC goal category paired with "SDE placement" target) and guides you to resolve them.
+- **Concise Hinglish Persona**: Friendly, encouraging, and punchy 2-3 sentence responses.
 
-1. **Clone and install dependencies**
+### 📅 3. Daily Planner & Adaptive Schedule
+- **Custom Wake/Sleep Hours**: Choose from presets (*Early Bird 6AM–10PM*, *Regular 8AM–11PM*, *Night Owl 10AM–2AM*, *Late Night 9AM–3AM*) or custom hours.
+- **Smart Daily Task Distribution**: Distributes undated tasks across future days (max 3 per day sorted by priority) to prevent daily schedule overload.
+- **"Load More Tasks" On-Demand**: Finished early? Click one button to pull tomorrow's tasks into today's execution plan.
+
+### ⏱️ 4. Pomodoro Focus Timer
+- **Flexible Focus Sessions**: Presets for *Standard (25m)*, *Short Break (5m)*, *Long Break (15m)*, and *Deep Work (50m)*.
+- **Ambient Audio & Notifications**: Integrated audio bell notifications upon timer completion.
+- **Automated Session Logging**: Completed focus sessions are automatically recorded in Supabase to track total daily focus hours.
+
+### 🗓️ 5. Interactive Calendar & Task Sync
+- **Task-Calendar Synchronization**: One-click schedule button on any task turns it into a calendar event with dedicated start/end time slots.
+- **Visual Month/Week View**: Full calendar interface to drag, inspect, and manage scheduled study sessions and deadlines.
+
+### 📝 6. Rich-Text Notes Module
+- **TipTap Rich Text Editor**: Format study notes with bold, italics, headings, bullet lists, and code blocks.
+- **Search & Tag Filtering**: Quickly locate notes by keyword, custom tags, or favorite status.
+- **Theme-Aware Dark/Light Styling**: Fully integrated with Lakshya's dynamic CSS variable theme engine.
+
+### 📅 7. Weekly Timetable Planner
+- **Recurring Class/Study Schedule**: Plan weekly recurring schedules for lectures, lab sessions, and study blocks by day of the week.
+
+### 📊 8. Analytics & Productivity Insights
+- **Dream Meter & Readiness Index**: Displays calculated goal completion readiness based on completed roadmap tasks.
+- **Interactive Recharts Insights**: Area trend charts for 14-day completion history, pie charts for task status distribution, and priority breakdown bar charts.
+
+### 🎨 9. Workspace Vibe Customization
+- **5 Dynamic Color Palettes**: *Midnight Navy*, *Dusty Bloom*, *Emerald Prestige*, *Sakura Mauve*, and *Violet Dusk*.
+- **Seamless Theme Switcher**: Instantly toggles between light and dark modes with persistent user preference storage.
+
+---
+
+## 🛠️ Tech Stack
+
+- **Framework**: [Next.js 16 (App Router)](https://nextjs.org/)
+- **Language**: [TypeScript](https://www.typescriptlang.org/)
+- **Database & Auth**: [Supabase PostgreSQL & SSR Auth](https://supabase.com/)
+- **AI Engine**: [Google Generative AI SDK (`gemini-3.5-flash-lite`, `gemini-2.0-flash`)](https://ai.google.dev/)
+- **Styling**: Vanilla CSS (CSS Custom Properties) + [Tailwind CSS v4](https://tailwindcss.com/)
+- **UI Components**: [Shadcn UI](https://ui.shadcn.com/), [Lucide React Icons](https://lucide.dev/)
+- **Animations**: [Framer Motion](https://www.framer.com/motion/)
+- **Data Visualization**: [Recharts](https://recharts.org/)
+- **Rich Text Editor**: [TipTap Editor](https://tiptap.dev/)
+- **Notifications**: [React Hot Toast](https://react-hot-toast.com/)
+
+---
+
+## 📁 Project Directory Structure
+
+```
+goalpilot-ai/
+├── app/                        # Next.js App Router
+│   ├── (auth)/                 # Protected App Routes (Wrapped with OnboardingGuard)
+│   │   ├── analytics/          # Productivity Analytics Dashboard & Recharts
+│   │   ├── calendar/           # Task-synced Interactive Calendar
+│   │   ├── dashboard/          # Gamified Dashboard & High-Priority Quests
+│   │   ├── goals/              # Goal Category & Workspace Theme Selection
+│   │   ├── notes/              # TipTap Rich-Text Notes Module
+│   │   ├── personalize/        # 5-Step Personalization Engine Survey
+│   │   ├── planner/            # Daily Timeline Planner & Schedule Presets
+│   │   ├── pomodoro/           # Focus Timer & Session Tracker
+│   │   ├── roadmap/            # Gamified AI Island Game-Map
+│   │   ├── tasks/              # Task Manager with Priority & Calendar Sync
+│   │   └── timetable/          # Weekly Recurring Timetable Manager
+│   ├── (public)/               # Public Authentication Routes
+│   │   ├── login/              # User Login Page
+│   │   └── signup/             # User Registration Page
+│   ├── api/                    # Serverless API Routes
+│   │   ├── ai/                 # Saathi Chat, Goal Validation, Recommendations
+│   │   ├── events/             # Calendar Events CRUD
+│   │   ├── generate-roadmap/   # Gemini AI Roadmap & Milestone Generator
+│   │   ├── goals/              # Active Goal Selection
+│   │   ├── milestones/         # Roadmap Milestones API
+│   │   ├── notes/              # Notes CRUD
+│   │   ├── personalization/    # User Personalization Preferences API
+│   │   ├── pomodoro/           # Pomodoro Session Logging
+│   │   ├── tasks/              # Tasks CRUD & Status Updates
+│   │   ├── timetable/          # Timetable Schedule CRUD
+│   │   └── user/               # Onboarding Status & Theme Preferences
+│   ├── layout.tsx              # Root Layout with Theme & Auth Providers
+│   └── page.tsx                # Marketing Landing Page
+├── components/                 # Reusable React UI Components
+│   ├── auth/                   # OnboardingGuard Client Route Protection
+│   ├── editor/                 # TipTap RichTextEditor Component
+│   ├── gamification/           # XP Widgets & Badges
+│   ├── layout/                 # Sidebar, Header, Mobile Bottom Navigation
+│   ├── planner/                # Timeline View Components
+│   ├── roadmap/                # GameMap & MilestoneDrawer Components
+│   ├── saathi/                 # Saathi AI Floating Chatbot Drawer
+│   └── ui/                     # Shadcn Primitives (Button, Card, Input, etc.)
+├── lib/                        # Core Utilities & Services
+│   ├── ai/                     # Google Gemini AI Client & Prompts (`gemini.ts`)
+│   ├── supabase/               # Supabase Server & Client SDK Initializers
+│   ├── theme-config.ts         # Workspace Color Palettes & Tokens
+│   └── theme-context.tsx       # React Theme Context Provider
+├── public/                     # Static Assets & Icons
+├── supabase/                   # Database Migrations & SQL Schemas
+│   ├── schema.sql              # Core PostgreSQL Tables & RLS Policies
+│   └── migrations/             # Applied Migration Scripts
+├── .env.local                  # Local Environment Variables (Git Ignored)
+└── package.json                # Project Dependencies & Scripts
+```
+
+---
+
+## ⚡ Quick Start & Local Setup
+
+### 📋 Prerequisites
+- **Node.js**: `v18.17.0` or higher
+- **npm**: `v9.0.0` or higher
+- **Supabase Account**: Free project at [supabase.com](https://supabase.com)
+- **Google Gemini API Key**: Free key from [Google AI Studio](https://aistudio.google.com/)
+
+---
+
+### 📥 1. Clone the Repository
 ```bash
-cd lakshya
+git clone https://github.com/Vidhi-web/Lakshya-pixelhack.git
+cd Lakshya-pixelhack
+```
+
+---
+
+### 📦 2. Install Dependencies
+```bash
 npm install
 ```
 
-2. **Set up environment variables**
-```bash
-cp .env.example .env.local
-```
+---
 
-Add your API keys to `.env.local`:
+### 🔑 3. Configure Environment Variables
+Create a file named `.env.local` in the root directory:
+
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
-GEMINI_API_KEY=your_gemini_api_key
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=https://your-supabase-project-id.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-supabase-service-role-key
+
+# Google Gemini AI API Key
+GEMINI_API_KEY=your-google-gemini-api-key
+
+# App Public URL
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
-3. **Run development server**
+---
+
+### 🗄️ 4. Set Up Supabase Database Tables
+Run the SQL queries inside `supabase/schema.sql` in your **Supabase SQL Editor** to create the required tables (`users`, `goals`, `user_personalization`, `milestones`, `tasks`, `events`, `notes`, `pomodoro_sessions`, `timetable`, `user_streaks`, `analytics_events`).
+
+---
+
+### 🚀 5. Run the Development Server
 ```bash
 npm run dev
 ```
 
-4. **Open http://localhost:3000**
-
-See [SETUP.md](./SETUP.md) for detailed instructions.
+Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ---
 
-## 📁 Project Structure
-
-```
-lakshya/
-├── app/                    # Next.js App Router
-│   ├── (auth)/             # Protected routes
-│   │   ├── dashboard/      # Main dashboard
-│   │   ├── tasks/          # Task management
-│   │   ├── timetable/      # Calendar
-│   │   ├── notes/          # Notes
-│   │   └── analytics/      # Analytics
-│   ├── (public)/           # Public routes
-│   │   ├── login/          # Login page
-│   │   └── signup/         # Signup page
-│   ├── api/                # API routes
-│   │   └── ai/             # AI endpoints
-│   └── actions/            # Server Actions
-├── components/             # React components
-│   ├── ui/                 # shadcn components
-│   ├── dashboard/          # Dashboard widgets
-│   ├── tasks/              # Task components
-│   └── shared/             # Shared components
-├── lib/                    # Utilities
-│   ├── supabase/           # Supabase clients
-│   ├── ai/                 # AI services
-│   ├── types.ts            # TypeScript types
-│   └── utils.ts            # Helper functions
-├── stores/                 # Zustand stores
-├── hooks/                  # Custom React hooks
-└── docs/                   # Documentation
+### 🏗️ 6. Verify Production Build
+```bash
+npm run build
 ```
 
 ---
 
-## 🎯 Popular Goal Templates
+## 📜 Available NPM Scripts
 
-- **GATE 2025** - Complete exam preparation roadmap
-- **Campus Placements** - DSA, projects, and interview prep
-- **Startup Launch** - MVP development and launch plan
-- **Higher Studies** - GRE, TOEFL, SOP, and applications
-- **Skill Development** - Learn new technologies
-- **Custom Goals** - AI-generated custom roadmaps
-
----
-
-## 🗺️ Development Roadmap
-
-### ✅ Phase 1: Foundation (Complete)
-- Project setup
-- Core infrastructure
-- Landing page
-
-### 🚧 Phase 2: Authentication (In Progress)
-- User signup/login
-- Session management
-- Protected routes
-
-### 📅 Upcoming Phases
-- AI Roadmap Generation
-- Goal-Adaptive Dashboard
-- Task Management
-- Timetable/Calendar
-- Notes System
-- Pomodoro Timer
-- Analytics Dashboard
-- Weekly AI Recommendations
-- UI Polish & Responsive Design
-
-**Estimated MVP Completion**: 10-12 days
+| Script | Command | Purpose |
+|---|---|---|
+| `npm run dev` | `next dev` | Launches local development server |
+| `npm run build` | `next build` | Compiles optimized production build |
+| `npm run start` | `next start` | Runs production server locally |
+| `npm run lint` | `eslint` | Runs ESLint syntax and code check |
 
 ---
 
-## 🤝 Contributing
+## 🌐 Production Deployment (Vercel)
 
-This is a hackathon project currently in active development. Contributions, issues, and feature requests are welcome!
+Lakshya is pre-configured for one-click deployment on **Vercel**:
+
+1. Push your repository to GitHub.
+2. Import the project into **[Vercel](https://vercel.com)**.
+3. Add the 5 Environment Variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `GEMINI_API_KEY`, `NEXT_PUBLIC_APP_URL`).
+4. Keep the **Build Command** set to default (`npm run build`).
+5. Click **Deploy**!
+
+In your Supabase Dashboard under **Authentication → URL Configuration**, add your Vercel domain under **Site URL** and **Redirect URLs** (`https://your-app.vercel.app/**`).
 
 ---
 
 ## 📄 License
 
-MIT License - see LICENSE file for details
-
----
-
-## 🙏 Acknowledgments
-
-- **UI Inspiration**: Linear, Notion, Vercel Dashboard
-- **Open Source**: Next.js, Supabase, shadcn/ui, Radix UI
-- **AI**: Google Gemini 2.5 Flash
-
----
-
-## 📬 Contact
-
-Built for hackathon by passionate developers
-
-**Demo**: Coming soon on Vercel
-
----
-
-**⭐ Star this repo if you find it helpful!**
+This project is open-source and available under the [MIT License](LICENSE).
