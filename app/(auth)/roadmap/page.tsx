@@ -125,21 +125,10 @@ export default function RoadmapPage() {
   const handleGenerateRoadmap = async () => {
     setGenerating(true);
     try {
-      // First, get the user's active goal type from milestones/tasks API or directly
-      const goalRes = await fetch('/api/milestones');
-      let goalType = 'placement'; // fallback
-      
-      if (goalRes.ok) {
-        const goalData = await goalRes.json();
-        if (goalData.goalType) {
-          goalType = goalData.goalType;
-        }
-      }
-      
       const res = await fetch('/api/generate-roadmap', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ goalType }),
+        body: JSON.stringify({}),
       });
       if (res.ok) {
         toast.success('AI Roadmap created!');
